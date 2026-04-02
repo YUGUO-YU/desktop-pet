@@ -3,7 +3,7 @@
 显示宠物和情绪反馈
 """
 import flet as ft
-from services.emotion import EmotionEngine, EmotionState
+from src.services.emotion import EmotionEngine, EmotionState
 
 
 class PetWindow:
