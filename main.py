@@ -114,9 +114,12 @@ def main(page: ft.Page):
     """主函数"""
     app = DesktopPet(page)
     
-    # 初始加载天气和新闻
-    page.run_thread(app.weather_service.refresh())
-    page.run_thread(app.news_service.refresh())
+    # 初始加载天气和新闻（在主线程中调用）
+    try:
+        app.weather_service.refresh()
+        app.news_service.refresh()
+    except Exception as e:
+        print(f"初始加载失败: {e}")
 
 
 if __name__ == "__main__":
