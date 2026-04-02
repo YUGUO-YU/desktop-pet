@@ -9,15 +9,15 @@ import json
 import os
 from datetime import datetime
 
-from ui.pet_window import PetWindow
-from ui.weather_card import WeatherCard
-from ui.news_card import NewsCard
-from ui.organize_panel import OrganizePanel
-from services.emotion import EmotionEngine, EmotionState
-from services.weather import WeatherService
-from services.news import NewsService
-from services.file_organizer import FileOrganizer
-from utils.database import Database
+from src.ui.pet_window import PetWindow
+from src.ui.weather_card import WeatherCard
+from src.ui.news_card import NewsCard
+from src.ui.organize_panel import OrganizePanel
+from src.services.emotion import EmotionEngine, EmotionState
+from src.services.weather import WeatherService
+from src.services.news import NewsService
+from src.services.file_organizer import FileOrganizer
+from src.utils.database import Database
 
 
 class DesktopPet:
