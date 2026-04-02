@@ -3,7 +3,7 @@
 文件整理功能界面
 """
 import flet as ft
-from services.file_organizer import FileOrganizer
+from src.services.file_organizer import FileOrganizer
 
 
 class OrganizePanel:
