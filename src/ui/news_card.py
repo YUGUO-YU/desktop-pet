@@ -3,7 +3,7 @@
 显示国内外新闻资讯
 """
 import flet as ft
-from services.news import NewsService
+from src.services.news import NewsService
 
 
 class NewsCard:
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     class MockDB:
         def cache_news(self, data): pass
     
-    from services.news import NewsService
+    from src.services.news import NewsService
     service = NewsService(MockDB())
     service.refresh()
     print(service.news_data)
