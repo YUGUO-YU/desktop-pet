@@ -3,7 +3,7 @@
 显示天气信息和穿衣建议
 """
 import flet as ft
-from services.weather import WeatherService
+from src.services.weather import WeatherService
 
 
 class WeatherCard:
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         def cache_weather(self, data): pass
         def get_cached_weather(self): return None
     
-    from services.weather import WeatherService
+    from src.services.weather import WeatherService
     service = WeatherService(MockDB())
     service.set_city("北京")
     service.refresh()
