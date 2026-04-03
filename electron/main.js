@@ -50,6 +50,9 @@ function createWindow() {
     webPreferences: { nodeIntegration: false, contextIsolation: true }
   });
 
+  // 先强制显示窗口
+  mainWindow.show();
+  
   // 加载项目根目录的 index.html
   const htmlPath = path.join(__dirname, '..', 'index.html');
   console.log('📍 加载:', htmlPath);
@@ -60,7 +63,6 @@ function createWindow() {
     console.error('❌ 文件不存在:', htmlPath);
   }
 
-  mainWindow.once('ready-to-show', () => { mainWindow?.show(); console.log('🧚 窗口已显示'); });
   mainWindow.on('close', e => { e.preventDefault(); mainWindow?.hide(); });
 }
 
