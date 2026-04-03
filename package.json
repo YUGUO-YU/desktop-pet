@@ -6,7 +6,7 @@
   "main": "dist-electron/main.mjs",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && electron-builder",
+    "build": "vite build && electron-builder",
     "preview": "vite preview"
   },
   "keywords": ["desktop", "spirit", "electron", "ai", "assistant"],
@@ -38,6 +38,10 @@
     "directories": {
       "output": "release"
     },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
     "win": {
       "target": "nsis"
     },

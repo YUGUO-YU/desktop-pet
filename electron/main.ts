@@ -7,15 +7,13 @@ const __dirname = path.dirname(__filename)
 
 // 禁用 GPU 加速
 app.disableHardwareAcceleration()
-app.commandLine.appendSwitch('disable-gpu-sandbox')
 
 console.log('🚀 应用启动中...')
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 
-const isDev = process.env.NODE_ENV !== 'production' && !app.isPackaged
-console.log('🔧 开发模式:', isDev)
+const isDev = !app.isPackaged
 
 // 创建托盘
 function createTray() {
@@ -74,13 +72,14 @@ function createWindow() {
   const primaryDisplay = screen.getPrimaryDisplay()
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
 
-  // 浮窗尺寸
   const winWidth = 220
   const winHeight = 280
-
-  // 默认位置：右下角
   const defaultX = screenWidth - winWidth - 30
   const defaultY = screenHeight - winHeight - 80
+
+  // 获取 preload 路径
+  const preloadPath = path.join(__dirname, 'preload.mjs')
+  console.log('📍 Preload 路径:', preloadPath)
 
   mainWindow = new BrowserWindow({
     width: winWidth,
@@ -95,47 +94,22 @@ function createWindow() {
     show: false,
     backgroundColor: '#00000000',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
-      devTools: true,
     },
   })
 
-  // 尝试加载页面
-  async function loadPage() {
-    const devUrl = 'http://localhost:5173'
-    const prodPath = path.join(__dirname, '../dist/index.html')
-    
-    if (isDev) {
-      console.log('📡 尝试加载开发服务器:', devUrl)
-      
-      try {
-        await mainWindow!.loadURL(devUrl, {
-          timeout: 10000, // 10秒超时
-          headers: {
-            'Cache-Control': 'no-cache',
-          },
-        })
-        console.log('✅ 开发服务器加载成功')
-      } catch (err) {
-        console.error('❌ 开发服务器加载失败，尝试加载生产版本:', err)
-        // 如果开发服务器失败，尝试加载生产版本
-        try {
-          await mainWindow!.loadFile(prodPath)
-          console.log('✅ 生产版本加载成功')
-        } catch (err2) {
-          console.error('❌ 生产版本也加载失败:', err2)
-        }
-      }
-    } else {
-      console.log('📡 加载生产版本:', prodPath)
-      await mainWindow!.loadFile(prodPath)
-      console.log('✅ 生产版本加载成功')
-    }
-  }
+  // 始终加载本地文件（生产模式）
+  // 不管开发还是生产都用本地文件
+  const htmlPath = path.join(__dirname, '../dist/index.html')
+  console.log('📍 HTML 路径:', htmlPath)
 
-  loadPage()
+  mainWindow.loadFile(htmlPath).then(() => {
+    console.log('✅ 页面加载成功')
+  }).catch((err) => {
+    console.error('❌ 页面加载失败:', err)
+  })
 
   // 窗口就绪后显示
   mainWindow.once('ready-to-show', () => {
@@ -151,11 +125,6 @@ function createWindow() {
   // 页面加载失败
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
     console.error('❌ 页面加载失败:', errorCode, errorDescription)
-  })
-
-  // JS 错误
-  mainWindow.webContents.on('render-process-gone', (event, details) => {
-    console.error('❌ 渲染进程崩溃:', details)
   })
 
   mainWindow.on('close', (event) => {
