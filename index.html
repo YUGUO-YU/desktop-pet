@@ -127,7 +127,8 @@
       cursor: pointer;
     }
     .news-item:hover { background: #f3f4f6; }
-    .news-title { font-size: 13px; font-weight: 500; color: #333; margin-bottom: 4px; }
+    .news-title { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 4px; }
+    .news-summary { font-size: 12px; color: #666; margin-bottom: 4px; line-height: 1.4; }
     .news-meta { font-size: 11px; color: #9ca3af; }
     
     /* 日程 */
@@ -318,10 +319,38 @@
 
     // ============ 新闻服务 ============
     async function fetchNews() {
+      // 带有摘要的新闻数据
       state.news = [
-        { title: '科技创新推动高质量发展', source: '人民日报', url: 'http://www.people.com.cn' },
-        { title: '人工智能改变未来生活', source: '新华社', url: 'http://www.xinhuanet.com' },
-        { title: '全球气候变化应对措施', source: 'BBC', url: 'https://www.bbc.com' }
+        { 
+          title: '科技创新推动高质量发展', 
+          summary: '我国科技创新取得重大突破，数字经济规模持续扩大，为经济高质量发展注入新动能。',
+          source: '人民日报', 
+          url: 'http://www.people.com.cn' 
+        },
+        { 
+          title: '人工智能加速赋能千行百业', 
+          summary: 'AI技术正在深入改变制造业、医疗、教育等行业，智能应用场景不断丰富。',
+          source: '新华社', 
+          url: 'http://www.xinhuanet.com' 
+        },
+        { 
+          title: '全球气候治理进入新阶段', 
+          summary: '各国加强合作共同应对气候变化，推动绿色低碳转型，可再生能源发展提速。',
+          source: 'BBC', 
+          url: 'https://www.bbc.com' 
+        },
+        { 
+          title: '新能源汽车销量创新高', 
+          summary: '一季度新能源汽车销量同比增长超过40%，市场渗透率持续提升。',
+          source: '央视新闻', 
+          url: 'http://news.cctv.com' 
+        },
+        { 
+          title: '教育改革助力人才培养', 
+          summary: '教育部推进教育数字化战略，促进优质教育资源共享，提升人才培养质量。',
+          source: '中国教育报', 
+          url: 'http://www.jyb.cn' 
+        }
       ];
       render();
     }
@@ -500,8 +529,9 @@
             <div class="news-list">
               ${state.news.length ? state.news.map(n => `
                 <div class="news-item" onclick="window.open('${n.url}')">
-                  <div class="news-title">${n.title}</div>
-                  <div class="news-meta">📰 ${n.source}</div>
+                  <div class="news-title">📰 ${n.title}</div>
+                  <div class="news-summary">${n.summary}</div>
+                  <div class="news-meta">${n.source}</div>
                 </div>
               `).join('') : '<div style="color:#9ca3af;text-align:center;padding:20px;">加载中...</div>'}
             </div>
