@@ -50,8 +50,8 @@ function createWindow() {
     webPreferences: { nodeIntegration: false, contextIsolation: true }
   });
 
-  // 直接加载当前目录的 index.html
-  const htmlPath = path.join(__dirname, 'index.html');
+  // 加载项目根目录的 index.html
+  const htmlPath = path.join(__dirname, '..', 'index.html');
   console.log('📍 加载:', htmlPath);
   
   if (fs.existsSync(htmlPath)) {
