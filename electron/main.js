@@ -1,129 +1,72 @@
-const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, screen, Tray, Menu, nativeImage } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 console.log('🚀 应用启动中...');
 
 let mainWindow = null;
 let tray = null;
 
-// 创建托盘图标
+// 创建托盘
 function createTray() {
   try {
     const size = 16;
-    const iconBuffer = Buffer.alloc(size * size * 4);
-    
+    const buffer = Buffer.alloc(size * size * 4);
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
         const idx = (y * size + x) * 4;
         const dx = x - size / 2;
         const dy = y - size / 2;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        
-        if (dist < size / 2 - 1) {
-          iconBuffer[idx] = 99;     // R
-          iconBuffer[idx + 1] = 102; // G
-          iconBuffer[idx + 2] = 241; // B
-          iconBuffer[idx + 3] = 255; // A
+        if (Math.sqrt(dx*dx + dy*dy) < size / 2 - 1) {
+          buffer[idx] = 99; buffer[idx+1] = 102; buffer[idx+2] = 241; buffer[idx+3] = 255;
         } else {
-          iconBuffer[idx + 3] = 0;
+          buffer[idx+3] = 0;
         }
       }
     }
-    
-    const icon = nativeImage.createFromBuffer(iconBuffer, { width: size, height: size });
+    const icon = nativeImage.createFromBuffer(buffer, { width: size, height: size });
     tray = new Tray(icon);
-    
-    const contextMenu = Menu.buildFromTemplate([
+    tray.setToolTip('桌面精灵');
+    tray.setContextMenu(Menu.buildFromTemplate([
       { label: '显示', click: () => mainWindow?.show() },
       { label: '隐藏', click: () => mainWindow?.hide() },
-      { type: 'separator' },
       { label: '退出', click: () => app.quit() },
-    ]);
-    
-    tray.setToolTip('桌面精灵');
-    tray.setContextMenu(contextMenu);
-    
-    tray.on('click', () => {
-      if (mainWindow?.isVisible()) {
-        mainWindow.hide();
-      } else {
-        mainWindow?.show();
-      }
-    });
-    
+    ]));
+    tray.on('click', () => mainWindow?.isVisible() ? mainWindow.hide() : mainWindow?.show());
     console.log('✅ 托盘创建成功');
-  } catch (error) {
-    console.error('❌ 托盘创建失败:', error);
-  }
+  } catch (e) { console.error('❌ 托盘失败:', e); }
 }
 
 function createWindow() {
-  console.log('📦 正在创建窗口...');
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const winW = 240, winH = 310;
   
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
-
-  const winWidth = 240;
-  const winHeight = 300;
-  const defaultX = screenWidth - winWidth - 30;
-  const defaultY = screenHeight - winHeight - 80;
-
   mainWindow = new BrowserWindow({
-    width: winWidth,
-    height: winHeight,
-    x: defaultX,
-    y: defaultY,
-    frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    resizable: false,
-    skipTaskbar: true,
-    show: false,
+    width: winW, height: winH,
+    x: width - winW - 30, y: height - winH - 80,
+    frame: false, transparent: true, alwaysOnTop: true,
+    resizable: false, skipTaskbar: true, show: false,
     backgroundColor: '#00000000',
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-    },
+    webPreferences: { nodeIntegration: false, contextIsolation: true }
   });
 
-  // 加载本地 HTML
-  const htmlPath = path.join(__dirname, 'dist', 'index.html');
+  // 直接加载当前目录的 index.html
+  const htmlPath = path.join(__dirname, 'index.html');
   console.log('📍 加载:', htmlPath);
+  
+  if (fs.existsSync(htmlPath)) {
+    mainWindow.loadFile(htmlPath).then(() => console.log('✅ 加载成功')).catch(e => console.error('❌ 加载失败:', e));
+  } else {
+    console.error('❌ 文件不存在:', htmlPath);
+  }
 
-  mainWindow.loadFile(htmlPath).then(() => {
-    console.log('✅ 页面加载成功');
-  }).catch((err) => {
-    console.error('❌ 页面加载失败:', err);
-  });
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
-    console.log('🧚 桌面精灵已显示');
-  });
-
-  mainWindow.on('close', (event) => {
-    event.preventDefault();
-    mainWindow?.hide();
-  });
+  mainWindow.once('ready-to-show', () => { mainWindow?.show(); console.log('🧚 窗口已显示'); });
+  mainWindow.on('close', e => { e.preventDefault(); mainWindow?.hide(); });
 }
 
-app.whenReady().then(() => {
-  console.log('✨ 应用准备就绪');
-  createWindow();
-  createTray();
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
-});
-
-app.on('window-all-closed', () => {
-  // 不退出
-});
-
-// IPC
-ipcMain.on('hide-window', () => mainWindow?.hide());
-ipcMain.on('show-window', () => mainWindow?.show());
-ipcMain.on('quit-app', () => app.quit());
+app.whenReady().then(() => { createWindow(); createTray(); });
+app.on('window-all-closed', () => {});
+ipc = require('electron').ipcMain;
+ipc.on('hide-window', () => mainWindow?.hide());
+ipc.on('show-window', () => mainWindow?.show());
+ipc.on('quit-app', () => app.quit());
