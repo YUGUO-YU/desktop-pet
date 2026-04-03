@@ -1,3 +1,4 @@
-*.tgg
-__pycache__/
 node_modules/
+__pycache__/
+*.tgz
+.DS_Store
