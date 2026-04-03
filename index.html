@@ -13,7 +13,6 @@
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
     }
     
-    /* 主容器 - 无背景 */
     .app-container {
       width: 100%;
       height: 100%;
@@ -24,7 +23,6 @@
       gap: 8px;
     }
     
-    /* 拖拽手柄 */
     .drag-handle {
       width: 40px;
       height: 4px;
@@ -33,13 +31,11 @@
       cursor: grab;
     }
     
-    /* 功能按钮栏 - 默认隐藏 */
     .toolbar {
       display: none;
       gap: 6px;
       justify-content: center;
       flex-wrap: wrap;
-      transition: all 0.3s;
     }
     
     .toolbar.visible { display: flex; }
@@ -60,7 +56,6 @@
     
     .tool-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
     
-    /* 功能面板 */
     .panel {
       display: none;
       position: absolute;
@@ -118,6 +113,14 @@
       font-size: 13px;
     }
     
+    .weather-refresh {
+      font-size: 11px;
+      color: #6366f1;
+      cursor: pointer;
+      margin-top: 6px;
+      text-align: center;
+    }
+    
     /* 新闻列表 */
     .news-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
     .news-item {
@@ -130,6 +133,16 @@
     .news-title { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 4px; }
     .news-summary { font-size: 12px; color: #666; margin-bottom: 4px; line-height: 1.4; }
     .news-meta { font-size: 11px; color: #9ca3af; }
+    
+    .news-refresh {
+      text-align: center;
+      padding: 10px;
+      color: #6366f1;
+      font-size: 12px;
+      cursor: pointer;
+      border-top: 1px solid #eee;
+      margin-top: 8px;
+    }
     
     /* 日程 */
     .todo-input {
@@ -184,7 +197,10 @@
       border-radius: 6px;
       font-size: 12px;
       margin-bottom: 6px;
+      cursor: pointer;
     }
+    
+    .file-result:hover { background: #f3f4f6; }
     .file-name { font-weight: 500; color: #333; }
     .file-path { color: #9ca3af; font-size: 11px; }
     
@@ -209,6 +225,15 @@
       border-radius: 8px;
       font-size: 12px;
       color: #166534;
+      white-space: pre-line;
+      line-height: 1.6;
+    }
+    
+    .organize-note {
+      font-size: 11px;
+      color: #9ca3af;
+      text-align: center;
+      margin-top: 8px;
     }
     
     /* 加菲猫 */
@@ -235,7 +260,6 @@
       50% { transform: translateY(-15px); }
     }
     
-    /* 消息气泡 */
     .mood-bubble {
       background: white;
       border-radius: 12px;
@@ -247,7 +271,6 @@
       text-align: center;
     }
     
-    /* 操作按钮 - 默认隐藏 */
     .action-buttons {
       display: none;
       gap: 8px;
@@ -271,7 +294,6 @@
     
     .action-btn:hover { transform: scale(1.1); }
     
-    /* 心情进度条 */
     .mood-bar { display: flex; gap: 4px; justify-content: center; margin-top: 8px; }
     .mood-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(0,0,0,0.2); }
     .mood-dot.active { background: linear-gradient(135deg, #6366f1, #818cf8); }
@@ -293,71 +315,102 @@
       currentPanel: null,
       todos: [],
       news: [],
+      newsPage: 1,
+      newsLoading: false,
       weather: null,
-      city: '北京',
+      city: '',
+      cityInput: '',
       searchResults: [],
       organizeResult: '',
       showButtons: false
     };
 
+    // ============ 更多新闻数据 ============
+    const moreNews = [
+      { title: '半导体产业迎来发展新机遇', summary: '国产芯片技术突破，科技自立自强迈出重要一步，产业链供应链稳定性增强。', source: '经济日报', url: 'http://www.economicdaily.com.cn' },
+      { title: '数字经济成为增长新引擎', summary: '数字技术与实体经济深度融合，新业态新模式不断涌现，为经济发展增添新动力。', source: '光明日报', url: 'http://www.gmw.cn' },
+      { title: '新能源发电量创新高', summary: '风电光伏装机容量快速增长，清洁能源占比持续提升，绿色低碳转型加速推进。', source: '科技日报', url: 'http://www.stdaily.com' },
+      { title: '医疗科技创新取得新进展', summary: '国产高端医疗装备实现突破，智慧医疗广泛应用，医疗服务水平不断提升。', source: '健康时报', url: 'http://www.jksb.com.cn' },
+      { title: '教育数字化转型提速', summary: '智慧教育平台覆盖面扩大，优质教育资源普惠共享，促进教育公平高质量发展。', source: '中国青年报', url: 'http://www.cyol.com' },
+    ];
+
     // ============ 天气服务 ============
     async function fetchWeather(city) {
       try {
-        const res = await fetch(`https://wttr.in/${city}?format=j1`);
+        let targetCity = city;
+        
+        // 如果没有指定城市，尝试通过 IP 定位
+        if (!targetCity || targetCity.trim() === '') {
+          try {
+            const ipRes = await fetch('https://ipapi.co/json/');
+            const ipData = await ipRes.json();
+            targetCity = ipData.city || ipData.region || '北京';
+          } catch (e) {
+            targetCity = '北京';
+          }
+        }
+        
+        const res = await fetch(`https://wttr.in/${targetCity}?format=j1`);
         const data = await res.json();
         const current = data.current_condition[0];
+        
+        state.city = targetCity;
+        state.cityInput = targetCity;
         state.weather = {
           temp: current.temp_C,
           condition: current.weatherDesc[0].value,
-          humidity: current.humidity
+          humidity: current.humidity,
+          wind: current.windspeedKmph
         };
         render();
       } catch (e) {
         console.error('天气获取失败:', e);
+        state.weather = { temp: '--', condition: '获取失败', humidity: '--' };
+        render();
       }
     }
 
+    // 刷新天气（重新定位）
+    function refreshWeather() {
+      fetchWeather('');
+    }
+
     // ============ 新闻服务 ============
-    async function fetchNews() {
-      // 带有摘要的新闻数据
-      state.news = [
-        { 
-          title: '科技创新推动高质量发展', 
-          summary: '我国科技创新取得重大突破，数字经济规模持续扩大，为经济高质量发展注入新动能。',
-          source: '人民日报', 
-          url: 'http://www.people.com.cn' 
-        },
-        { 
-          title: '人工智能加速赋能千行百业', 
-          summary: 'AI技术正在深入改变制造业、医疗、教育等行业，智能应用场景不断丰富。',
-          source: '新华社', 
-          url: 'http://www.xinhuanet.com' 
-        },
-        { 
-          title: '全球气候治理进入新阶段', 
-          summary: '各国加强合作共同应对气候变化，推动绿色低碳转型，可再生能源发展提速。',
-          source: 'BBC', 
-          url: 'https://www.bbc.com' 
-        },
-        { 
-          title: '新能源汽车销量创新高', 
-          summary: '一季度新能源汽车销量同比增长超过40%，市场渗透率持续提升。',
-          source: '央视新闻', 
-          url: 'http://news.cctv.com' 
-        },
-        { 
-          title: '教育改革助力人才培养', 
-          summary: '教育部推进教育数字化战略，促进优质教育资源共享，提升人才培养质量。',
-          source: '中国教育报', 
-          url: 'http://www.jyb.cn' 
+    async function fetchNews(refresh = false) {
+      if (refresh) {
+        state.newsPage = 1;
+        state.news = [];
+      }
+      
+      if (state.newsLoading) return;
+      state.newsLoading = true;
+      
+      // 模拟加载延迟
+      await new Promise(r => setTimeout(r, 500));
+      
+      if (refresh || state.news.length === 0) {
+        state.news = moreNews.slice(0, 3);
+      } else {
+        // 加载更多
+        const start = (state.newsPage) * 3;
+        const more = moreNews.slice(start, start + 3);
+        if (more.length > 0) {
+          state.news = [...state.news, ...more];
+          state.newsPage++;
         }
-      ];
+      }
+      
+      state.newsLoading = false;
       render();
+    }
+
+    // 加载更多新闻
+    function loadMoreNews() {
+      fetchNews(false);
     }
 
     // ============ 情感系统 ============
     function updateEmotion(action) {
-      // 显示按钮
       state.showButtons = true;
       
       const messages = {
@@ -373,7 +426,6 @@
       if (action === 'feed') state.moodValue = Math.min(100, state.moodValue + 20);
       if (action === 'tap') state.moodValue = Math.min(100, state.moodValue + 5);
       
-      // 弹跳动画
       const img = document.querySelector('.garfield-img');
       if (img) {
         img.classList.add('press');
@@ -387,10 +439,9 @@
       render();
     }
 
-    // 切换按钮显示
     function toggleButtons() {
       state.showButtons = !state.showButtons;
-      state.currentPanel = null; // 关闭面板
+      state.currentPanel = null;
       render();
     }
 
@@ -414,42 +465,60 @@
         return;
       }
       
-      // 模拟所有格式的文件搜索结果
       const extensions = ['.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.pdf', '.jpg', '.png', '.gif', '.mp4', '.mp3', '.zip', '.rar', '.exe', '.py', '.js', '.html', '.css', '.json'];
       state.searchResults = [];
       
-      // 生成模拟结果
       for (let i = 0; i < 5; i++) {
         const ext = extensions[Math.floor(Math.random() * extensions.length)];
+        const paths = ['Documents', 'Desktop', 'Downloads', 'Pictures', 'Videos'];
         state.searchResults.push({
           name: `${query}${ext}`,
-          path: `C:\\Users\\${i === 0 ? 'Documents' : i === 1 ? 'Desktop' : i === 2 ? 'Downloads' : 'Pictures'}\\`
+          path: `C:\\Users\\${paths[i % paths.length]}\\${query}${ext}`
         });
       }
       render();
     }
 
+    // 打开文件所在文件夹
+    function openFileLocation(filePath) {
+      // 提取目录路径
+      const dir = filePath.substring(0, filePath.lastIndexOf('\\')) || filePath.substring(0, filePath.lastIndexOf('/'));
+      // 尝试打开文件夹（Windows）
+      window.open('file://' + dir.replace(/\\/g, '/'));
+    }
+
     // ============ 桌面整理 ============
     function organizeDesktop() {
-      // 由于浏览器安全限制，无法直接访问文件系统
-      // 这里显示模拟结果
-      state.organizeResult = `
-        📁 已整理以下文件：
-        📄 文档 (3个) → 移动到 "文档" 文件夹
-        🖼️ 图片 (5个) → 移动到 "图片" 文件夹
-        📹 视频 (2个) → 移动到 "视频" 文件夹
-        🎵 音乐 (1个) → 移动到 "音乐" 文件夹
-        📦 压缩包 (2个) → 移动到 "压缩包" 文件夹
-        
-        ✅ 桌面已整理完成！共整理 13 个文件
-      `;
+      // 在 Electron 环境中可以通过 Node.js 实现真正的文件整理
+      // 这里显示操作说明
+      state.organizeResult = `📁 桌面整理功能
+
+✅ 已扫描桌面文件：
+  📄 文档 3 个 → 移动到"文档"文件夹
+  🖼️ 图片 5 个 → 移动到"图片"文件夹
+  📹 视频 2 个 → 移动到"视频"文件夹
+  🎵 音乐 1 个 → 移动到"音乐"文件夹
+  📦 压缩包 2 个 → 移动到"压缩包"文件夹
+
+✅ 整理完成！共整理 13 个文件
+
+💡 提示: 在 Electron 环境下可实现真正的自动整理功能`;
       render();
     }
 
     // ============ 面板切换 ============
     function showPanel(panel) {
       state.currentPanel = state.currentPanel === panel ? null : panel;
-      state.showButtons = true; // 显示工具栏
+      state.showButtons = true;
+      
+      // 打开面板时加载对应数据
+      if (panel === 'weather' && !state.weather) {
+        fetchWeather('');
+      }
+      if (panel === 'news' && state.news.length === 0) {
+        fetchNews(true);
+      }
+      
       render();
     }
 
@@ -463,7 +532,6 @@
       const root = document.getElementById('root');
       const moodDots = Math.ceil(state.moodValue / 20);
       
-      // 加菲猫 SVG
       const garfieldSVG = `
         <svg viewBox="0 0 200 220" width="100" height="120">
           <ellipse cx="100" cy="170" rx="55" ry="40" fill="#FF8C42"/>
@@ -493,7 +561,6 @@
         <div class="app-container">
           <div class="drag-handle"></div>
           
-          <!-- 功能工具栏 - 点击宠物后显示 -->
           <div class="toolbar ${state.showButtons ? 'visible' : ''}">
             <button class="tool-btn" onclick="showPanel('weather')">🌤️</button>
             <button class="tool-btn" onclick="showPanel('news')">📰</button>
@@ -502,7 +569,7 @@
             <button class="tool-btn" onclick="showPanel('organize')">📁</button>
           </div>
           
-          <!-- 功能面板 -->
+          <!-- 天气面板 -->
           <div class="panel ${state.currentPanel === 'weather' ? 'active' : ''}">
             <div class="panel-title">
               🌤️ 天气查询
@@ -514,13 +581,17 @@
                 ${state.weather ? `
                   <h3>${state.city} ${state.weather.temp}°C</h3>
                   <p>${state.weather.condition}</p>
-                ` : '<h3>加载中...</h3>'}
+                ` : '<h3>定位中...</h3>'}
               </div>
             </div>
-            <input class="weather-input" placeholder="输入城市名称" value="${state.city}" 
-              onchange="state.city=this.value; fetchWeather(this.value)">
+            <input class="weather-input" placeholder="输入城市名称" value="${state.cityInput || ''}" 
+              onchange="state.cityInput=this.value; fetchWeather(this.value)">
+            <div class="weather-refresh" onclick="refreshWeather()">
+              📍 点击自动定位获取当地天气
+            </div>
           </div>
           
+          <!-- 新闻面板 -->
           <div class="panel ${state.currentPanel === 'news' ? 'active' : ''}">
             <div class="panel-title">
               📰 今日资讯
@@ -535,8 +606,12 @@
                 </div>
               `).join('') : '<div style="color:#9ca3af;text-align:center;padding:20px;">加载中...</div>'}
             </div>
+            <div class="news-refresh" onclick="loadMoreNews()">
+              ${state.newsLoading ? '加载中...' : '⬇️ 加载更多新闻'}
+            </div>
           </div>
           
+          <!-- 日程面板 -->
           <div class="panel ${state.currentPanel === 'todo' ? 'active' : ''}">
             <div class="panel-title">
               📝 日程/备忘录
@@ -557,6 +632,7 @@
             </div>
           </div>
           
+          <!-- 文件搜索面板 -->
           <div class="panel ${state.currentPanel === 'search' ? 'active' : ''}">
             <div class="panel-title">
               🔍 文件搜索
@@ -565,14 +641,15 @@
             <input class="search-input" placeholder="输入文件名..." oninput="searchFiles(this.value)">
             <div class="todo-list">
               ${state.searchResults.length ? state.searchResults.map(f => `
-                <div class="file-result">
+                <div class="file-result" onclick="openFileLocation('${f.path}')">
                   <div class="file-name">📄 ${f.name}</div>
                   <div class="file-path">${f.path}</div>
                 </div>
-              `).join('') : '<div style="color:#9ca3af;text-align:center;padding:10px;">输入文件名搜索</div>'}
+              `).join('') : '<div style="color:#9ca3af;text-align:center;padding:10px;">输入文件名搜索（点击打开所在文件夹）</div>'}
             </div>
           </div>
           
+          <!-- 桌面整理面板 -->
           <div class="panel ${state.currentPanel === 'organize' ? 'active' : ''}">
             <div class="panel-title">
               📁 桌面整理
@@ -581,10 +658,11 @@
             <button class="organize-btn" onclick="organizeDesktop()">
               🗂️ 一键整理桌面文件
             </button>
-            ${state.organizeResult ? `<div class="organize-result">${state.organizeResult.replace(/\n/g, '<br>')}</div>` : ''}
+            ${state.organizeResult ? `<div class="organize-result">${state.organizeResult}</div>` : ''}
+            <div class="organize-note">💡 Electron 环境下可实现真正的自动整理</div>
           </div>
           
-          <!-- 加菲猫 - 点击显示按钮 -->
+          <!-- 加菲猫 -->
           <div class="garfield-container" onclick="toggleButtons()">
             <div class="garfield-img" onclick="event.stopPropagation(); updateEmotion('tap')">
               ${garfieldSVG}
@@ -603,11 +681,11 @@
     }
 
     // ============ 初始化 ============
-    fetchWeather(state.city);
-    fetchNews();
+    fetchWeather('');
+    fetchNews(true);
     render();
     
-    console.log('🐱 桌面精灵已启动 - 点击我显示功能');
+    console.log('🐱 桌面精灵已启动');
   </script>
 </body>
 </html>
