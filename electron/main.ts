@@ -105,10 +105,13 @@ function createWindow() {
   const htmlPath = path.join(__dirname, '../dist/index.html')
   console.log('📍 HTML 路径:', htmlPath)
 
-  mainWindow.loadFile(htmlPath).then(() => {
-    console.log('✅ 页面加载成功')
+  // 加载开发服务器（Vite 启动后）
+  mainWindow.loadURL('http://localhost:5173').then(() => {
+    console.log('✅ 开发服务器加载成功')
   }).catch((err) => {
-    console.error('❌ 页面加载失败:', err)
+    console.error('❌ 加载失败，尝试本地文件:', err)
+    // 失败则尝试本地文件
+    mainWindow.loadFile(htmlPath).catch(e => console.error('❌ 本地文件也失败:', e))
   })
 
   // 窗口就绪后显示
