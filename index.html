@@ -339,29 +339,30 @@
       try {
         let targetCity = city;
         
-        // 如果没有指定城市，尝试通过 IP 定位
+        // 如果没有指定城市，尝试通过 Electron API 获取 IP 定位
         if (!targetCity || targetCity.trim() === '') {
           try {
-            const ipRes = await fetch('https://ipapi.co/json/');
-            const ipData = await ipRes.json();
-            targetCity = ipData.city || ipData.region || '北京';
+            const ipResult = await window.electronAPI.fetchIP();
+            if (ipResult.success && ipResult.city) {
+              targetCity = ipResult.city;
+            } else {
+              targetCity = '北京';
+            }
           } catch (e) {
             targetCity = '北京';
           }
         }
         
-        const res = await fetch(`https://wttr.in/${targetCity}?format=j1`);
-        const data = await res.json();
-        const current = data.current_condition[0];
+        // 使用 Electron API 获取天气
+        const weatherResult = await window.electronAPI.fetchWeather(targetCity);
         
-        state.city = targetCity;
-        state.cityInput = targetCity;
-        state.weather = {
-          temp: current.temp_C,
-          condition: current.weatherDesc[0].value,
-          humidity: current.humidity,
-          wind: current.windspeedKmph
-        };
+        if (weatherResult.success && weatherResult.data) {
+          state.city = targetCity;
+          state.cityInput = targetCity;
+          state.weather = weatherResult.data;
+        } else {
+          state.weather = { temp: '--', condition: '获取失败', humidity: '--' };
+        }
         render();
       } catch (e) {
         console.error('天气获取失败:', e);
@@ -458,52 +459,136 @@
     }
 
     // ============ 文件搜索 ============
-    function searchFiles(query) {
+    async function searchFiles(query) {
       if (!query.trim()) {
         state.searchResults = [];
         render();
         return;
       }
       
-      const extensions = ['.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.pdf', '.jpg', '.png', '.gif', '.mp4', '.mp3', '.zip', '.rar', '.exe', '.py', '.js', '.html', '.css', '.json'];
       state.searchResults = [];
       
-      for (let i = 0; i < 5; i++) {
-        const ext = extensions[Math.floor(Math.random() * extensions.length)];
-        const paths = ['Documents', 'Desktop', 'Downloads', 'Pictures', 'Videos'];
-        state.searchResults.push({
-          name: `${query}${ext}`,
-          path: `C:\\Users\\${paths[i % paths.length]}\\${query}${ext}`
-        });
+      try {
+        // 获取桌面路径
+        const desktopPath = await window.electronAPI.getDesktopPath();
+        
+        // 读取桌面文件
+        const result = await window.electronAPI.readDir(desktopPath);
+        
+        if (result.success && result.files) {
+          // 过滤匹配的文件
+          const queryLower = query.toLowerCase();
+          const matchingFiles = result.files.filter(f => 
+            !f.isDirectory && f.name.toLowerCase().includes(queryLower)
+          );
+          
+          // 最多显示10个结果
+          state.searchResults = matchingFiles.slice(0, 10);
+        }
+      } catch (e) {
+        console.error('文件搜索失败:', e);
       }
+      
       render();
     }
 
     // 打开文件所在文件夹
-    function openFileLocation(filePath) {
-      // 提取目录路径
-      const dir = filePath.substring(0, filePath.lastIndexOf('\\')) || filePath.substring(0, filePath.lastIndexOf('/'));
-      // 尝试打开文件夹（Windows）
-      window.open('file://' + dir.replace(/\\/g, '/'));
+    async function openFileLocation(filePath) {
+      try {
+        await window.electronAPI.showItemInFolder(filePath);
+      } catch (e) {
+        console.error('打开文件夹失败:', e);
+      }
     }
 
     // ============ 桌面整理 ============
-    function organizeDesktop() {
-      // 在 Electron 环境中可以通过 Node.js 实现真正的文件整理
-      // 这里显示操作说明
-      state.organizeResult = `📁 桌面整理功能
-
-✅ 已扫描桌面文件：
-  📄 文档 3 个 → 移动到"文档"文件夹
-  🖼️ 图片 5 个 → 移动到"图片"文件夹
-  📹 视频 2 个 → 移动到"视频"文件夹
-  🎵 音乐 1 个 → 移动到"音乐"文件夹
-  📦 压缩包 2 个 → 移动到"压缩包"文件夹
-
-✅ 整理完成！共整理 13 个文件
-
-💡 提示: 在 Electron 环境下可实现真正的自动整理功能`;
+    async function organizeDesktop() {
+      state.organizeResult = '📁 正在整理桌面文件...';
       render();
+      
+      try {
+        const desktopPath = await window.electronAPI.getDesktopPath();
+        const result = await window.electronAPI.readDir(desktopPath);
+        
+        if (!result.success || !result.files) {
+          state.organizeResult = '❌ 无法读取桌面文件';
+          render();
+          return;
+        }
+        
+        // 文件分类规则
+        const categories = {
+          '文档': ['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.pdf', '.wps'],
+          '图片': ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'],
+          '视频': ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv'],
+          '音乐': ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a'],
+          '压缩包': ['.zip', '.rar', '.7z', '.tar', '.gz']
+        };
+        
+        const categoryFiles: Record<string, string[]> = {
+          '文档': [], '图片': [], '视频': [], '音乐': [], '压缩包': [], '其他': []
+        };
+        
+        // 分类文件
+        for (const file of result.files) {
+          if (file.isDirectory) continue;
+          
+          const ext = getExt(file.name);
+          let found = false;
+          
+          for (const [cat, exts] of Object.entries(categories)) {
+            if (exts.includes(ext)) {
+              categoryFiles[cat].push(file.name);
+              found = true;
+              break;
+            }
+          }
+          
+          if (!found) {
+            categoryFiles['其他'].push(file.name);
+          }
+        }
+        
+        // 创建分类文件夹并移动文件
+        let movedCount = 0;
+        let summary = '📁 桌面整理完成\n\n';
+        
+        for (const [cat, files] of Object.entries(categoryFiles)) {
+          if (files.length === 0) continue;
+          
+          const catFolder = path.join(desktopPath, cat);
+          
+          // 创建分类文件夹
+          await window.electronAPI.createFolder(catFolder);
+          
+          // 移动文件
+          for (const fileName of files) {
+            const src = path.join(desktopPath, fileName);
+            const dest = path.join(catFolder, fileName);
+            await window.electronAPI.moveFile(src, dest);
+            movedCount++;
+          }
+          
+          // 添加到摘要
+          const icon = cat === '文档' ? '📄' : cat === '图片' ? '🖼️' : cat === '视频' ? '📹' : cat === '音乐' ? '🎵' : cat === '压缩包' ? '📦' : '📁';
+          summary += `${icon} ${cat} ${files.length} 个 → 已移动到 "${cat}" 文件夹\n`;
+        }
+        
+        summary += `\n✅ 共整理 ${movedCount} 个文件`;
+        state.organizeResult = summary;
+        
+      } catch (e) {
+        console.error('整理失败:', e);
+        state.organizeResult = '❌ 整理失败: ' + e.message;
+      }
+      
+      render();
+    }
+    
+    // 文件扩展名辅助函数
+    function getExt(filename: string): string {
+      const lastDot = filename.lastIndexOf('.');
+      return lastDot > 0 ? filename.substring(lastDot).toLowerCase() : '';
     }
 
     // ============ 面板切换 ============
