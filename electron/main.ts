@@ -74,7 +74,7 @@ function createWindow() {
   const primaryDisplay = screen.getPrimaryDisplay()
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
 
-  // 浮窗尺寸 - 稍微调大以确保内容显示
+  // 浮窗尺寸
   const winWidth = 220
   const winHeight = 280
 
@@ -93,28 +93,49 @@ function createWindow() {
     resizable: false,
     skipTaskbar: true,
     show: false,
-    backgroundColor: '#00000000', // 确保透明背景
+    backgroundColor: '#00000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
       contextIsolation: true,
       nodeIntegration: false,
-      devTools: isDev, // 开发模式开启 DevTools
+      devTools: true,
     },
   })
 
-  // 加载页面
-  const loadURL = isDev ? 'http://localhost:5173' : path.join(__dirname, '../dist/index.html')
-  console.log('📡 加载地址:', isDev ? loadURL : `file://${loadURL}`)
-  
-  if (isDev) {
-    mainWindow.loadURL(loadURL).then(() => {
-      console.log('✅ 页面加载成功')
-    }).catch((err) => {
-      console.error('❌ 页面加载失败:', err)
-    })
-  } else {
-    mainWindow.loadFile(loadURL)
+  // 尝试加载页面
+  async function loadPage() {
+    const devUrl = 'http://localhost:5173'
+    const prodPath = path.join(__dirname, '../dist/index.html')
+    
+    if (isDev) {
+      console.log('📡 尝试加载开发服务器:', devUrl)
+      
+      try {
+        await mainWindow!.loadURL(devUrl, {
+          timeout: 10000, // 10秒超时
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        })
+        console.log('✅ 开发服务器加载成功')
+      } catch (err) {
+        console.error('❌ 开发服务器加载失败，尝试加载生产版本:', err)
+        // 如果开发服务器失败，尝试加载生产版本
+        try {
+          await mainWindow!.loadFile(prodPath)
+          console.log('✅ 生产版本加载成功')
+        } catch (err2) {
+          console.error('❌ 生产版本也加载失败:', err2)
+        }
+      }
+    } else {
+      console.log('📡 加载生产版本:', prodPath)
+      await mainWindow!.loadFile(prodPath)
+      console.log('✅ 生产版本加载成功')
+    }
   }
+
+  loadPage()
 
   // 窗口就绪后显示
   mainWindow.once('ready-to-show', () => {
