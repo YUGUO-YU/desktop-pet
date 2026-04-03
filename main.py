@@ -80,7 +80,7 @@ class PetWidget:
                 ], alignment=ft.MainAxisAlignment.CENTER),
             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
             padding=20,
-            bgcolor=ft.colors.WHITE,
+            bgcolor="white",
             border_radius=15,
         )
         return self.container
