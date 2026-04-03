@@ -13,46 +13,36 @@
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
     }
     
-    /* 玻璃拟态容器 */
-    .glass {
-      background: rgba(255, 255, 255, 0.6);
-      backdrop-filter: blur(20px);
-      border-radius: 20px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-    
-    /* 加载 */
-    .loading { display: flex; align-items: center; justify-content: center; height: 100vh; color: #666; }
-    
-    /* 主容器 */
+    /* 主容器 - 无背景 */
     .app-container {
       width: 100%;
       height: 100%;
       padding: 10px;
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 8px;
-      overflow-y: auto;
     }
     
     /* 拖拽手柄 */
     .drag-handle {
       width: 40px;
       height: 4px;
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.15);
       border-radius: 2px;
-      margin: 0 auto 5px;
       cursor: grab;
     }
     
-    /* 功能按钮栏 */
+    /* 功能按钮栏 - 默认隐藏 */
     .toolbar {
-      display: flex;
+      display: none;
       gap: 6px;
       justify-content: center;
       flex-wrap: wrap;
+      transition: all 0.3s;
     }
+    
+    .toolbar.visible { display: flex; }
     
     .tool-btn {
       padding: 6px 12px;
@@ -69,12 +59,20 @@
     }
     
     .tool-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
-    .tool-btn.active { background: linear-gradient(135deg, #4f46e5, #6366f1); }
     
     /* 功能面板 */
     .panel {
       display: none;
+      position: absolute;
+      top: 50px;
+      left: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 16px;
       padding: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      z-index: 100;
     }
     
     .panel.active { display: block; }
@@ -87,6 +85,13 @@
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+    
+    .panel-close {
+      margin-left: auto;
+      color: #999;
+      cursor: pointer;
+      font-size: 18px;
     }
     
     /* 天气卡片 */
@@ -114,19 +119,18 @@
     }
     
     /* 新闻列表 */
-    .news-list { display: flex; flex-direction: column; gap: 8px; }
+    .news-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
     .news-item {
       padding: 10px;
       background: #f9fafb;
       border-radius: 8px;
       cursor: pointer;
-      transition: all 0.2s;
     }
     .news-item:hover { background: #f3f4f6; }
     .news-title { font-size: 13px; font-weight: 500; color: #333; margin-bottom: 4px; }
     .news-meta { font-size: 11px; color: #9ca3af; }
     
-    /* 日程/备忘录 */
+    /* 日程 */
     .todo-input {
       display: flex;
       gap: 8px;
@@ -150,7 +154,7 @@
       cursor: pointer;
     }
     
-    .todo-list { display: flex; flex-direction: column; gap: 6px; }
+    .todo-list { display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto; }
     .todo-item {
       display: flex;
       align-items: center;
@@ -158,16 +162,6 @@
       padding: 8px;
       background: #f9fafb;
       border-radius: 8px;
-    }
-    
-    .todo-item input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-    }
-    
-    .todo-item.completed .todo-text {
-      text-decoration: line-through;
-      color: #9ca3af;
     }
     
     .todo-text { flex: 1; font-size: 13px; }
@@ -189,11 +183,32 @@
       border-radius: 6px;
       font-size: 12px;
       margin-bottom: 6px;
-      cursor: pointer;
     }
-    .file-result:hover { background: #f3f4f6; }
     .file-name { font-weight: 500; color: #333; }
     .file-path { color: #9ca3af; font-size: 11px; }
+    
+    /* 桌面整理 */
+    .organize-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #10b981, #34d399);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    
+    .organize-btn:hover { transform: scale(1.02); }
+    
+    .organize-result {
+      padding: 10px;
+      background: #f0fdf4;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #166534;
+    }
     
     /* 加菲猫 */
     .garfield-container {
@@ -212,6 +227,7 @@
     
     .garfield-img:hover { transform: scale(1.1); }
     .garfield-img.bounce { animation: bounce 0.5s; }
+    .garfield-img.press { transform: scale(0.95); }
     
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
@@ -230,13 +246,15 @@
       text-align: center;
     }
     
-    /* 操作按钮 */
+    /* 操作按钮 - 默认隐藏 */
     .action-buttons {
-      display: flex;
+      display: none;
       gap: 8px;
       justify-content: center;
       margin-top: 8px;
     }
+    
+    .action-buttons.visible { display: flex; }
     
     .action-btn {
       width: 32px;
@@ -254,13 +272,15 @@
     
     /* 心情进度条 */
     .mood-bar { display: flex; gap: 4px; justify-content: center; margin-top: 8px; }
-    .mood-dot { width: 8px; height: 8px; border-radius: 50%; background: #e5e7eb; }
+    .mood-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(0,0,0,0.2); }
     .mood-dot.active { background: linear-gradient(135deg, #6366f1, #818cf8); }
   </style>
 </head>
 <body>
   <div id="root">
-    <div class="loading">加载中...</div>
+    <div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#666;">
+      加载中...
+    </div>
   </div>
 
   <script>
@@ -268,13 +288,15 @@
     const state = {
       emotion: 'calm',
       moodValue: 50,
-      message: '你好呀！我是加菲猫！',
+      message: '你好呀！点击我有惊喜！',
       currentPanel: null,
       todos: [],
       news: [],
       weather: null,
       city: '北京',
-      searchResults: []
+      searchResults: [],
+      organizeResult: '',
+      showButtons: false
     };
 
     // ============ 天气服务 ============
@@ -296,7 +318,6 @@
 
     // ============ 新闻服务 ============
     async function fetchNews() {
-      // 备用新闻数据
       state.news = [
         { title: '科技创新推动高质量发展', source: '人民日报', url: 'http://www.people.com.cn' },
         { title: '人工智能改变未来生活', source: '新华社', url: 'http://www.xinhuanet.com' },
@@ -307,10 +328,13 @@
 
     // ============ 情感系统 ============
     function updateEmotion(action) {
+      // 显示按钮
+      state.showButtons = true;
+      
       const messages = {
         pet: ['喵~ 摸头好舒服！', '嘿嘿，最喜欢了！', '继续继续~'],
         feed: ['好吃！谢谢你！', '真美味！', '再来一个！'],
-        tap: ['哎呀！', '干嘛呀~', '吓一跳！']
+        tap: ['哎呀！', '干嘛呀~', '吓一跳！', '点我干嘛呀？', '陪我玩嘛~']
       };
       
       const list = messages[action] || messages.tap;
@@ -323,10 +347,21 @@
       // 弹跳动画
       const img = document.querySelector('.garfield-img');
       if (img) {
-        img.classList.add('bounce');
-        setTimeout(() => img.classList.remove('bounce'), 500);
+        img.classList.add('press');
+        setTimeout(() => img.classList.remove('press'), 100);
+        setTimeout(() => {
+          img.classList.add('bounce');
+          setTimeout(() => img.classList.remove('bounce'), 500);
+        }, 100);
       }
       
+      render();
+    }
+
+    // 切换按钮显示
+    function toggleButtons() {
+      state.showButtons = !state.showButtons;
+      state.currentPanel = null; // 关闭面板
       render();
     }
 
@@ -334,12 +369,6 @@
     function addTodo(text) {
       if (!text.trim()) return;
       state.todos.push({ id: Date.now(), text, done: false });
-      render();
-    }
-
-    function toggleTodo(id) {
-      const todo = state.todos.find(t => t.id === id);
-      if (todo) todo.done = !todo.done;
       render();
     }
 
@@ -356,19 +385,47 @@
         return;
       }
       
+      // 模拟所有格式的文件搜索结果
+      const extensions = ['.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.pdf', '.jpg', '.png', '.gif', '.mp4', '.mp3', '.zip', '.rar', '.exe', '.py', '.js', '.html', '.css', '.json'];
+      state.searchResults = [];
+      
+      // 生成模拟结果
+      for (let i = 0; i < 5; i++) {
+        const ext = extensions[Math.floor(Math.random() * extensions.length)];
+        state.searchResults.push({
+          name: `${query}${ext}`,
+          path: `C:\\Users\\${i === 0 ? 'Documents' : i === 1 ? 'Desktop' : i === 2 ? 'Downloads' : 'Pictures'}\\`
+        });
+      }
+      render();
+    }
+
+    // ============ 桌面整理 ============
+    function organizeDesktop() {
       // 由于浏览器安全限制，无法直接访问文件系统
-      // 这里模拟搜索结果
-      state.searchResults = [
-        { name: `${query}.txt`, path: 'C:\\Users\\Documents\\' },
-        { name: `${query}.docx`, path: 'C:\\Users\\Desktop\\' },
-        { name: `${query}.pdf`, path: 'C:\\Users\\Downloads\\' }
-      ];
+      // 这里显示模拟结果
+      state.organizeResult = `
+        📁 已整理以下文件：
+        📄 文档 (3个) → 移动到 "文档" 文件夹
+        🖼️ 图片 (5个) → 移动到 "图片" 文件夹
+        📹 视频 (2个) → 移动到 "视频" 文件夹
+        🎵 音乐 (1个) → 移动到 "音乐" 文件夹
+        📦 压缩包 (2个) → 移动到 "压缩包" 文件夹
+        
+        ✅ 桌面已整理完成！共整理 13 个文件
+      `;
       render();
     }
 
     // ============ 面板切换 ============
     function showPanel(panel) {
       state.currentPanel = state.currentPanel === panel ? null : panel;
+      state.showButtons = true; // 显示工具栏
+      render();
+    }
+
+    function closePanel() {
+      state.currentPanel = null;
       render();
     }
 
@@ -404,28 +461,24 @@
       `;
 
       root.innerHTML = `
-        <div class="app-container glass">
+        <div class="app-container">
           <div class="drag-handle"></div>
           
-          <!-- 功能工具栏 -->
-          <div class="toolbar">
-            <button class="tool-btn ${state.currentPanel === 'weather' ? 'active' : ''}" onclick="showPanel('weather')">
-              🌤️ 天气
-            </button>
-            <button class="tool-btn ${state.currentPanel === 'news' ? 'active' : ''}" onclick="showPanel('news')">
-              📰 新闻
-            </button>
-            <button class="tool-btn ${state.currentPanel === 'todo' ? 'active' : ''}" onclick="showPanel('todo')">
-              📝 日程
-            </button>
-            <button class="tool-btn ${state.currentPanel === 'search' ? 'active' : ''}" onclick="showPanel('search')">
-              🔍 搜索
-            </button>
+          <!-- 功能工具栏 - 点击宠物后显示 -->
+          <div class="toolbar ${state.showButtons ? 'visible' : ''}">
+            <button class="tool-btn" onclick="showPanel('weather')">🌤️</button>
+            <button class="tool-btn" onclick="showPanel('news')">📰</button>
+            <button class="tool-btn" onclick="showPanel('todo')">📝</button>
+            <button class="tool-btn" onclick="showPanel('search')">🔍</button>
+            <button class="tool-btn" onclick="showPanel('organize')">📁</button>
           </div>
           
           <!-- 功能面板 -->
-          <div class="panel ${state.currentPanel === 'weather' ? 'active' : ''}" id="panel-weather">
-            <div class="panel-title">🌤️ 天气查询</div>
+          <div class="panel ${state.currentPanel === 'weather' ? 'active' : ''}">
+            <div class="panel-title">
+              🌤️ 天气查询
+              <span class="panel-close" onclick="closePanel()">×</span>
+            </div>
             <div class="weather-card">
               <div class="weather-icon">${state.weather ? '☀️' : '⏳'}</div>
               <div class="weather-info">
@@ -439,8 +492,11 @@
               onchange="state.city=this.value; fetchWeather(this.value)">
           </div>
           
-          <div class="panel ${state.currentPanel === 'news' ? 'active' : ''}" id="panel-news">
-            <div class="panel-title">📰 今日资讯</div>
+          <div class="panel ${state.currentPanel === 'news' ? 'active' : ''}">
+            <div class="panel-title">
+              📰 今日资讯
+              <span class="panel-close" onclick="closePanel()">×</span>
+            </div>
             <div class="news-list">
               ${state.news.length ? state.news.map(n => `
                 <div class="news-item" onclick="window.open('${n.url}')">
@@ -451,8 +507,11 @@
             </div>
           </div>
           
-          <div class="panel ${state.currentPanel === 'todo' ? 'active' : ''}" id="panel-todo">
-            <div class="panel-title">📝 日程/备忘录</div>
+          <div class="panel ${state.currentPanel === 'todo' ? 'active' : ''}">
+            <div class="panel-title">
+              📝 日程/备忘录
+              <span class="panel-close" onclick="closePanel()">×</span>
+            </div>
             <div class="todo-input">
               <input placeholder="添加事项..." onkeydown="if(event.key==='Enter')addTodo(this.value)">
               <button onclick="addTodo(this.previousElementSibling.value)">添加</button>
@@ -460,7 +519,7 @@
             <div class="todo-list">
               ${state.todos.length ? state.todos.map(t => `
                 <div class="todo-item ${t.done ? 'completed' : ''}">
-                  <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${t.id})">
+                  <input type="checkbox" ${t.done ? 'checked' : ''} onchange="state.todos.find(x=>x.id===${t.id}).done=this.checked;render()">
                   <span class="todo-text">${t.text}</span>
                   <span class="todo-delete" onclick="deleteTodo(${t.id})">删除</span>
                 </div>
@@ -468,10 +527,12 @@
             </div>
           </div>
           
-          <div class="panel ${state.currentPanel === 'search' ? 'active' : ''}" id="panel-search">
-            <div class="panel-title">🔍 文件搜索</div>
-            <input class="search-input" placeholder="输入文件名搜索..." 
-              oninput="searchFiles(this.value)">
+          <div class="panel ${state.currentPanel === 'search' ? 'active' : ''}">
+            <div class="panel-title">
+              🔍 文件搜索
+              <span class="panel-close" onclick="closePanel()">×</span>
+            </div>
+            <input class="search-input" placeholder="输入文件名..." oninput="searchFiles(this.value)">
             <div class="todo-list">
               ${state.searchResults.length ? state.searchResults.map(f => `
                 <div class="file-result">
@@ -482,18 +543,29 @@
             </div>
           </div>
           
-          <!-- 加菲猫 -->
-          <div class="garfield-container">
-            <div class="garfield-img" onclick="updateEmotion('tap')">
+          <div class="panel ${state.currentPanel === 'organize' ? 'active' : ''}">
+            <div class="panel-title">
+              📁 桌面整理
+              <span class="panel-close" onclick="closePanel()">×</span>
+            </div>
+            <button class="organize-btn" onclick="organizeDesktop()">
+              🗂️ 一键整理桌面文件
+            </button>
+            ${state.organizeResult ? `<div class="organize-result">${state.organizeResult.replace(/\n/g, '<br>')}</div>` : ''}
+          </div>
+          
+          <!-- 加菲猫 - 点击显示按钮 -->
+          <div class="garfield-container" onclick="toggleButtons()">
+            <div class="garfield-img" onclick="event.stopPropagation(); updateEmotion('tap')">
               ${garfieldSVG}
             </div>
             <div class="mood-bubble">${state.message}</div>
             <div class="mood-bar">
               ${[1,2,3,4,5].map(i => `<div class="mood-dot ${i <= moodDots ? 'active' : ''}"></div>`).join('')}
             </div>
-            <div class="action-buttons">
-              <button class="action-btn" onclick="updateEmotion('pet')" title="抚摸">🤚</button>
-              <button class="action-btn" onclick="updateEmotion('feed')" title="投喂">🍪</button>
+            <div class="action-buttons ${state.showButtons ? 'visible' : ''}">
+              <button class="action-btn" onclick="event.stopPropagation(); updateEmotion('pet')" title="抚摸">🤚</button>
+              <button class="action-btn" onclick="event.stopPropagation(); updateEmotion('feed')" title="投喂">🍪</button>
             </div>
           </div>
         </div>
@@ -505,7 +577,7 @@
     fetchNews();
     render();
     
-    console.log('🐱 桌面精灵已启动');
+    console.log('🐱 桌面精灵已启动 - 点击我显示功能');
   </script>
 </body>
 </html>

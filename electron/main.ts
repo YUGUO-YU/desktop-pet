@@ -71,9 +71,9 @@ function createWindow() {
   const primaryDisplay = screen.getPrimaryDisplay()
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
 
-  // 窗口尺寸 - 调大以容纳功能面板
-  const winWidth = 280
-  const winHeight = 420
+  // 窗口尺寸 - 调小以适应悬浮宠物
+  const winWidth = 200
+  const winHeight = 280
   const defaultX = screenWidth - winWidth - 30
   const defaultY = screenHeight - winHeight - 80
 
