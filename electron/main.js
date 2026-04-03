@@ -38,75 +38,127 @@ function createTray() {
 }
 
 // 获取桌面路径
-function getDesktopPath() { return app.getPath('desktop'); }
+function getDesktopPath() { 
+  return app.getPath('desktop'); 
+}
 
 // 读取目录
 function readDir(dirPath) {
   try {
     const files = fs.readdirSync(dirPath);
-    return { success: true, files: files.map(f => {
+    const result = files.map(function(f) {
       const full = path.join(dirPath, f);
       const st = fs.statSync(full);
       return { name: f, path: full, isDirectory: st.isDirectory(), size: st.size, modified: st.mtime.toISOString() };
-    })} };
-  } catch (e) { return { success: false, error: e.message }; }
+    });
+    return { success: true, files: result };
+  } catch (e) { 
+    return { success: false, error: e.message }; 
+  }
 }
 
 // 移动文件
 function moveFile(src, dest) {
   try {
     const dir = path.dirname(dest);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     fs.renameSync(src, dest);
     return { success: true };
-  } catch (e) { return { success: false, error: e.message }; }
+  } catch (e) { 
+    return { success: false, error: e.message }; 
+  }
 }
 
 // 创建文件夹
 function createFolder(folderPath) {
-  try { if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true }); return { success: true }; }
-  catch (e) { return { success: false, error: e.message }; }
+  try { 
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath, { recursive: true });
+    }
+    return { success: true };
+  } catch (e) { 
+    return { success: false, error: e.message }; 
+  }
 }
 
 // 打开路径
-function openPath(filePath) { try { shell.openPath(filePath); return { success: true }; } catch (e) { return { success: false, error: e.message }; } }
+function openPath(filePath) { 
+  try { 
+    shell.openPath(filePath); 
+    return { success: true }; 
+  } catch (e) { 
+    return { success: false, error: e.message }; 
+  }
+}
 
 // 在文件夹中显示
-function showItemInFolder(filePath) { try { shell.showItemInFolder(filePath); return { success: true }; } catch (e) { return { success: false, error: e.message }; } }
+function showItemInFolder(filePath) { 
+  try { 
+    shell.showItemInFolder(filePath); 
+    return { success: true }; 
+  } catch (e) { 
+    return { success: false, error: e.message }; 
+  }
+}
 
 // 打开外部链接
-function openExternal(url) { try { shell.openExternal(url); return { success: true }; } catch (e) { return { success: false, error: e.message }; } }
+function openExternal(url) { 
+  try { 
+    shell.openExternal(url); 
+    return { success: true }; 
+  } catch (e) { 
+    return { success: false, error: e.message }; 
+  }
+}
 
 // HTTP 请求
 function httpRequest(url) {
-  return new Promise((resolve, reject) => {
+  return new Promise(function(resolve, reject) {
     const proto = url.startsWith('https') ? https : http;
-    const req = proto.get(url, res => { let d = ''; res.on('data', c => d += c); res.on('end', () => resolve(d)); });
+    const req = proto.get(url, function(res) {
+      let d = '';
+      res.on('data', function(c) { d += c; });
+      res.on('end', function() { resolve(d); });
+    });
     req.on('error', reject);
-    req.setTimeout(10000, () => { req.destroy(); reject(new Error('timeout')); });
+    req.setTimeout(10000, function() { req.destroy(); reject(new Error('timeout')); });
   });
 }
 
 // 获取 IP
 async function fetchIP() {
-  try { const data = await httpRequest('https://ipapi.co/json/'); const j = JSON.parse(data); return { success: true, ip: j.ip, city: j.city || j.region }; }
-  catch (e) { return { success: false, error: e.message }; }
+  try { 
+    const data = await httpRequest('https://ipapi.co/json/'); 
+    const j = JSON.parse(data); 
+    return { success: true, ip: j.ip, city: j.city || j.region }; 
+  } catch (e) { 
+    return { success: false, error: e.message }; 
+  }
 }
 
 // 获取天气
 async function fetchWeather(city) {
-  try { const data = await httpRequest(`https://wttr.in/${encodeURIComponent(city)}?format=j1`); const j = JSON.parse(data); const c = j.current_condition[0]; return { success: true, data: { temp: c.temp_C, condition: c.weatherDesc[0].value, humidity: c.humidity, wind: c.windspeedKmph } }; }
-  catch (e) { return { success: false, error: e.message }; }
+  try { 
+    const data = await httpRequest('https://wttr.in/' + encodeURIComponent(city) + '?format=j1'); 
+    const j = JSON.parse(data); 
+    const c = j.current_condition[0]; 
+    return { success: true, data: { temp: c.temp_C, condition: c.weatherDesc[0].value, humidity: c.humidity, wind: c.windspeedKmph } }; 
+  } catch (e) { 
+    return { success: false, error: e.message }; 
+  }
 }
 
 // 创建窗口
 function createWindow() {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const w = primaryDisplay.workAreaSize;
   const winW = 200, winH = 280;
   
   mainWindow = new BrowserWindow({
     width: winW, height: winH,
-    x: width - winW - 30, y: height - winH - 80,
+    x: w.width - winW - 30, y: w.height - winH - 80,
     frame: false, transparent: true, alwaysOnTop: true,
     resizable: false, skipTaskbar: true, show: false,
     backgroundColor: '#00000000',
@@ -115,24 +167,24 @@ function createWindow() {
 
   const htmlPath = isDev ? path.join(__dirname, '../index.html') : path.join(__dirname, '../dist/index.html');
   console.log('📍 加载:', htmlPath);
-  mainWindow.loadFile(htmlPath).then(() => console.log('✅ 加载成功')).catch(e => console.error('❌ 加载失败:', e));
-  mainWindow.once('ready-to-show', () => { mainWindow?.show(); console.log('🧚 已显示'); });
-  mainWindow.on('close', e => { e.preventDefault(); mainWindow?.hide(); });
+  mainWindow.loadFile(htmlPath).then(function() { console.log('✅ 加载成功'); }).catch(function(e) { console.error('❌ 加载失败:', e); });
+  mainWindow.once('ready-to-show', function() { mainWindow?.show(); console.log('🧚 已显示'); });
+  mainWindow.on('close', function(e) { e.preventDefault(); mainWindow?.hide(); });
 }
 
-app.whenReady().then(() => { createWindow(); createTray(); });
-app.on('window-all-closed', () => {});
+app.whenReady().then(function() { createWindow(); createTray(); });
+app.on('window-all-closed', function() {});
 
 // IPC
-ipcMain.handle('get-desktop-path', () => getDesktopPath());
-ipcMain.handle('read-dir', (_, p) => readDir(p));
-ipcMain.handle('move-file', (_, s, d) => moveFile(s, d));
-ipcMain.handle('create-folder', (_, p) => createFolder(p));
-ipcMain.handle('open-path', (_, p) => openPath(p));
-ipcMain.handle('show-item-in-folder', (_, p) => showItemInFolder(p));
-ipcMain.handle('open-external', (_, u) => openExternal(u));
-ipcMain.handle('fetch-ip', async () => await fetchIP());
-ipcMain.handle('fetch-weather', async (_, c) => await fetchWeather(c));
-ipcMain.on('hide-window', () => mainWindow?.hide());
-ipcMain.on('show-window', () => mainWindow?.show());
-ipcMain.on('quit-app', () => app.quit());
+ipcMain.handle('get-desktop-path', function() { return getDesktopPath(); });
+ipcMain.handle('read-dir', function(_, p) { return readDir(p); });
+ipcMain.handle('move-file', function(_, s, d) { return moveFile(s, d); });
+ipcMain.handle('create-folder', function(_, p) { return createFolder(p); });
+ipcMain.handle('open-path', function(_, p) { return openPath(p); });
+ipcMain.handle('show-item-in-folder', function(_, p) { return showItemInFolder(p); });
+ipcMain.handle('open-external', function(_, u) { return openExternal(u); });
+ipcMain.handle('fetch-ip', async function() { return await fetchIP(); });
+ipcMain.handle('fetch-weather', async function(_, c) { return await fetchWeather(c); });
+ipcMain.on('hide-window', function() { mainWindow?.hide(); });
+ipcMain.on('show-window', function() { mainWindow?.show(); });
+ipcMain.on('quit-app', function() { app.quit(); });
