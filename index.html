@@ -1,62 +1,211 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>桌面精灵</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body, #root {
-        width: 100%;
-        height: 100%;
-        background: transparent;
-        overflow: hidden;
-      }
-      /* 加载状态 */
-      .loading {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: #666;
-        font-family: -apple-system, sans-serif;
-      }
-      .loading::after {
-        content: '';
-        width: 20px;
-        height: 20px;
-        border: 2px solid #ddd;
-        border-top-color: #6366f1;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-left: 10px;
-      }
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root">
-      <div class="loading">加载中</div>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>桌面精灵 - 加菲猫</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: transparent; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .container {
+      width: 220px;
+      padding: 15px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      text-align: center;
+      position: relative;
+    }
+    .drag-handle {
+      width: 36px;
+      height: 4px;
+      background: rgba(0,0,0,0.15);
+      border-radius: 2px;
+      margin: 0 auto 10px;
+      cursor: grab;
+      -webkit-app-region: drag;
+    }
+    .garfield {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .garfield:hover { transform: scale(1.03); }
+    .garfield:active { transform: scale(0.98); }
+    .message {
+      background: white;
+      padding: 8px 14px;
+      border-radius: 12px;
+      margin-top: 12px;
+      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: inline-block;
+      min-width: 120px;
+    }
+    .mood {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-top: 10px;
+    }
+    .mood-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e5e7eb;
+    }
+    .mood-dot.active { 
+      background: #6366f1;
+      box-shadow: 0 0 6px rgba(99,102,241,0.5);
+    }
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+      transition: all 0.2s;
+    }
+    .btn:hover { transform: scale(1.1); }
+    .title {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">🧚 加菲猫</div>
+    <div class="drag-handle"></div>
+    
+    <div class="garfield" onclick="interact('body')">
+      <svg viewBox="0 0 200 220" width="150" height="160" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">
+        <defs>
+          <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FF9A5C"/>
+            <stop offset="50%" stop-color="#FF8C42"/>
+            <stop offset="100%" stop-color="#E67332"/>
+          </linearGradient>
+          <linearGradient id="bellyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FFE8D0"/>
+            <stop offset="100%" stop-color="#FFD4B8"/>
+          </linearGradient>
+          <filter id="shadow">
+            <feDropShadow dx="0" dy="4" stdDeviation="3" flood-opacity="0.25"/>
+          </filter>
+        </defs>
+        
+        <ellipse cx="100" cy="170" rx="55" ry="42" fill="url(#bodyGrad)" filter="url(#shadow)"/>
+        <ellipse cx="100" cy="175" rx="38" ry="28" fill="url(#bellyGrad)"/>
+        <ellipse cx="70" cy="165" rx="8" ry="12" fill="#222" opacity="0.6"/>
+        <ellipse cx="130" cy="175" rx="6" ry="10" fill="#222" opacity="0.5"/>
+        
+        <ellipse cx="100" cy="70" rx="52" ry="45" fill="url(#bodyGrad)" filter="url(#shadow)"/>
+        <path d="M85 40 Q100 35 115 40" stroke="#222" stroke-width="3" fill="none" opacity="0.5"/>
+        
+        <ellipse cx="55" cy="32" rx="16" ry="20" fill="#FF8C42"/>
+        <ellipse cx="55" cy="35" rx="9" ry="11" fill="#222"/>
+        <ellipse cx="145" cy="32" rx="16" ry="20" fill="#FF8C42"/>
+        <ellipse cx="145" cy="35" rx="9" ry="11" fill="#222"/>
+        
+        <ellipse cx="78" cy="58" rx="12" ry="6" fill="#FFD700"/>
+        <ellipse cx="122" cy="58" rx="12" ry="6" fill="#FFD700"/>
+        <ellipse cx="78" cy="59" rx="7" ry="4" fill="#111"/>
+        <ellipse cx="122" cy="59" rx="7" ry="4" fill="#111"/>
+        <path d="M66 55 Q78 52 90 55" stroke="#222" stroke-width="1.5" fill="none"/>
+        <path d="M110 55 Q122 52 134 55" stroke="#222" stroke-width="1.5" fill="none"/>
+        
+        <ellipse cx="100" cy="72" rx="7" ry="5" fill="#FF6B6B"/>
+        <path d="M92 80 Q100 85 108 80" stroke="#222" stroke-width="1.5" fill="none"/>
+        
+        <ellipse cx="55" cy="72" rx="10" ry="6" fill="#FFB6C1" opacity="0.4"/>
+        <ellipse cx="145" cy="72" rx="10" ry="6" fill="#FFB6C1" opacity="0.4"/>
+        
+        <line x1="42" y1="70" x2="15" y2="65" stroke="#111" stroke-width="1.5"/>
+        <line x1="42" y1="75" x2="15" y2="78" stroke="#111" stroke-width="1.5"/>
+        <line x1="158" y1="70" x2="185" y2="65" stroke="#111" stroke-width="1.5"/>
+        <line x1="158" y1="75" x2="185" y2="78" stroke="#111" stroke-width="1.5"/>
+        
+        <ellipse cx="38" cy="115" rx="14" ry="28" fill="#FF8C42" transform="rotate(25 38 115)"/>
+        <ellipse cx="38" cy="115" rx="8" ry="18" fill="#222" transform="rotate(25 38 115)" opacity="0.4"/>
+        <ellipse cx="162" cy="115" rx="14" ry="28" fill="#FF8C42" transform="rotate(-25 162 115)"/>
+        <ellipse cx="162" cy="115" rx="8" ry="18" fill="#222" transform="rotate(-25 162 115)" opacity="0.4"/>
+        
+        <ellipse cx="70" cy="205" rx="15" ry="10" fill="#FF8C42"/>
+        <ellipse cx="70" cy="205" rx="8" ry="5" fill="#222" opacity="0.3"/>
+        <ellipse cx="130" cy="205" rx="15" ry="10" fill="#FF8C42"/>
+        <ellipse cx="130" cy="205" rx="8" ry="5" fill="#222" opacity="0.3"/>
+        
+        <path d="M150 175 Q175 165 172 145" stroke="#FF8C42" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path d="M155 165 Q170 158 168 145" stroke="#222" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.7"/>
+      </svg>
     </div>
-    <script>
-      // 全局错误处理
-      window.onerror = function(msg, url, line, col, error) {
-        console.error('❌ JavaScript 错误:', msg, '行:', line)
-        document.getElementById('root').innerHTML = 
-          '<div style="padding:20px;text-align:center;color:red;">' +
-          '加载失败，请刷新重试<br>' + msg + 
-          '</div>'
-      }
-      
-      // 未处理的 Promise 错误
-      window.onunhandledrejection = function(event) {
-        console.error('❌ Promise 错误:', event.reason)
-      }
-      
-      console.log('📦 前端脚本加载中...')
-    </script>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    
+    <div class="message" id="msg">你好！我是加菲猫~ 🐱</div>
+    
+    <div class="mood">
+      <div class="mood-dot active"></div>
+      <div class="mood-dot active"></div>
+      <div class="mood-dot active"></div>
+      <div class="mood-dot"></div>
+      <div class="mood-dot"></div>
+    </div>
+    
+    <div class="buttons">
+      <button class="btn" onclick="interact('head')" title="摸头">🤚</button>
+      <button class="btn" onclick="feed()" title="喂食">🍪</button>
+      <button class="btn" onclick="play()" title="玩耍">🧶</button>
+    </div>
+  </div>
+
+  <script>
+    const messages = {
+      head: '喵~ 摸头好舒服！',
+      body: '嘿嘿，痒痒~',
+      arm: '这是我的手臂！厉害吧！',
+      foot: '别挠我脚脚！哈哈！',
+      feed: '好吃！谢谢你！',
+      play: '来玩吧！喵~'
+    };
+    
+    let mood = 3;
+    
+    function interact(part) {
+      document.getElementById('msg').textContent = messages[part] || '你好~';
+      updateMood();
+    }
+    
+    function feed() {
+      document.getElementById('msg').textContent = '好吃！谢谢你！🍪';
+      mood = Math.min(5, mood + 1);
+      updateMood();
+    }
+    
+    function play() {
+      document.getElementById('msg').textContent = '来玩吧！喵~ 🧶';
+      mood = Math.min(5, mood + 1);
+      updateMood();
+    }
+    
+    function updateMood() {
+      const dots = document.querySelectorAll('.mood-dot');
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i < mood);
+      });
+    }
+  </script>
+</body>
 </html>
