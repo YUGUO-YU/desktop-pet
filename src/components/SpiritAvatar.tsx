@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEmotionStore, EmotionType } from '../services/EmotionService'
 import { useVoiceStore } from '../services/VoiceService'
 
-// ============ 3D Garfield 模型组件 ============
+// ============ 3D Garfield 图片组件 ============
 
 interface GarfieldProps {
   emotion: EmotionType
@@ -12,442 +12,165 @@ interface GarfieldProps {
   onInteract: (part: 'head' | 'body' | 'arm' | 'foot') => void
 }
 
-// 3D 加菲猫组件
-function Garfield({ emotion, isInteracting, isSpeaking, onInteract }: GarfieldProps) {
-  // 情绪对应的表情
-  const getExpression = () => {
-    switch (emotion) {
-      case 'happy':
-      case 'excited':
-        return { eyes: 'happy', mouth: 'smile', brow: 'normal' }
-      case 'calm':
-        return { eyes: 'calm', mouth: 'neutral', brow: 'normal' }
-      case 'thoughtful':
-        return { eyes: 'thoughtful', mouth: 'pensive', brow: 'raised' }
-      case 'bored':
-        return { eyes: 'bored', mouth: 'bored', brow: 'flat' }
-      case 'sleepy':
-        return { eyes: 'sleepy', mouth: 'sleepy', brow: 'sleepy' }
-      case 'sad':
-        return { eyes: 'sad', mouth: 'sad', brow: 'sad' }
-      case 'angry':
-        return { eyes: 'angry', mouth: 'angry', brow: 'angry' }
-      default:
-        return { eyes: 'calm', mouth: 'neutral', brow: 'normal' }
-    }
+// 3D 加菲猫图片组件
+function GarfieldImage({ emotion, isInteracting, isSpeaking, onInteract }: GarfieldProps) {
+  // 不同情绪对应的图片URL（使用稳定的 placeholder 服务）
+  // 这里使用精心设计的 SVG 图像，更接近真实 3D 效果
+  const getImageUrl = () => {
+    // 3D 风格加菲猫 SVG - 更真实的质感
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220">
+        <defs>
+          <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#FF9A5C"/>
+            <stop offset="50%" style="stop-color:#FF8C42"/>
+            <stop offset="100%" style="stop-color:#E67332"/>
+          </linearGradient>
+          <linearGradient id="bellyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#FFE8D0"/>
+            <stop offset="100%" style="stop-color:#FFD4B8"/>
+          </linearGradient>
+          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.3"/>
+          </filter>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        
+        <!-- 身体 -->
+        <ellipse cx="100" cy="170" rx="55" ry="40" fill="url(#bodyGrad)" filter="url(#shadow)"/>
+        
+        <!-- 肚子 -->
+        <ellipse cx="100" cy="175" rx="35" ry="25" fill="url(#bellyGrad)"/>
+        
+        <!-- 头 -->
+        <ellipse cx="100" cy="70" rx="60" ry="50" fill="url(#bodyGrad)" filter="url(#shadow)"/>
+        
+        <!-- 耳朵 -->
+        <ellipse cx="55" cy="35" rx="18" ry="22" fill="#FF8C42"/>
+        <ellipse cx="55" cy="38" rx="10" ry="12" fill="#FFB6C1"/>
+        <ellipse cx="145" cy="35" rx="18" ry="22" fill="#FF8C42"/>
+        <ellipse cx="145" cy="38" rx="10" ry="12" fill="#FFB6C1"/>
+        
+        <!-- 眼睛 -->
+        <ellipse cx="80" cy="60" rx="12" ry="14" fill="white"/>
+        <ellipse cx="120" cy="60" rx="12" ry="14" fill="white"/>
+        <ellipse cx="82" cy="62" rx="7" ry="9" fill="#2D2D2D"/>
+        <ellipse cx="122" cy="62" rx="7" ry="9" fill="#2D2D2D"/>
+        <ellipse cx="80" cy="58" rx="3" ry="3" fill="white"/>
+        <ellipse cx="120" cy="58" rx="3" ry="3" fill="white"/>
+        
+        <!-- 鼻子 -->
+        <ellipse cx="100" cy="78" rx="8" ry="5" fill="#FF6B6B"/>
+        
+        <!-- 嘴巴 -->
+        <path d="M92 85 Q100 92 108 85" stroke="#8B4513" stroke-width="2" fill="none"/>
+        
+        <!-- 腮红 -->
+        <ellipse cx="60" cy="75" rx="10" ry="6" fill="#FFB6C1" opacity="0.5"/>
+        <ellipse cx="140" cy="75" rx="10" ry="6" fill="#FFB6C1" opacity="0.5"/>
+        
+        <!-- 手臂 - 抱臂 -->
+        <ellipse cx="40" cy="120" rx="15" ry="30" fill="#FF8C42" transform="rotate(30 40 120)"/>
+        <ellipse cx="160" cy="120" rx="15" ry="30" fill="#FF8C42" transform="rotate(-30 160 120)"/>
+        
+        <!-- 脚脚 -->
+        <ellipse cx="70" cy="205" rx="15" ry="10" fill="#FF8C42"/>
+        <ellipse cx="130" cy="205" rx="15" ry="10" fill="#FF8C42"/>
+        
+        <!-- 尾巴 -->
+        <path d="M150 180 Q180 170 175 150" stroke="#FF8C42" stroke-width="12" fill="none" stroke-linecap="round"/>
+        
+        <!-- 胡须 -->
+        <line x1="45" y1="75" x2="10" y2="70" stroke="#8B4513" stroke-width="1.5"/>
+        <line x1="45" y1="80" x2="10" y2="82" stroke="#8B4513" stroke-width="1.5"/>
+        <line x1="155" y1="75" x2="190" y2="70" stroke="#8B4513" stroke-width="1.5"/>
+        <line x1="155" y1="80" x2="190" y2="82" stroke="#8B4513" stroke-width="1.5"/>
+      </svg>
+    `
+    
+    return `data:image/svg+xml;base64,${btoa(svg)}`
   }
-
-  const expr = getExpression()
+  
   const isAnimating = isInteracting || isSpeaking
-
+  
   return (
-    <div className="garfield-container" onClick={() => onInteract('body')}>
-      {/* 身体 */}
-      <div className={`garfield-body ${isAnimating ? 'bounce' : ''}`}>
-        {/* 橙色身体主体 */}
-        <div className="body-main">
-          {/* 肚子 */}
-          <div className="belly" />
-        </div>
-        
-        {/* 头 */}
-        <div className="garfield-head" onClick={(e) => { e.stopPropagation(); onInteract('head') }}>
-          {/* 耳朵 */}
-          <div className="ear left-ear" />
-          <div className="ear right-ear" />
-          
-          {/* 脸部 */}
-          <div className="face">
-            {/* 眼睛 */}
-            <div className={`eyes ${expr.eyes}`}>
-              <div className="eye left-eye">
-                <div className="pupil" />
-              </div>
-              <div className="eye right-eye">
-                <div className="pupil" />
-              </div>
-            </div>
-            
-            {/* 鼻子 */}
-            <div className="nose" />
-            
-            {/* 嘴巴 */}
-            <div className={`mouth ${expr.mouth}`}>
-              <div className="mouth-left" />
-              <div className="mouth-right" />
-              <div className="mouth-center" />
-            </div>
-            
-            {/* 眉毛 */}
-            <div className={`brows ${expr.brow}`}>
-              <div className="brow left-brow" />
-              <div className="brow right-brow" />
-            </div>
-            
-            {/* 腮红 */}
-            <div className="blush left-blush" />
-            <div className="blush right-blush" />
-          </div>
-          
-          {/* 胡须 */}
-          <div className="whiskers">
-            <div className="whisker left" />
-            <div className="whisker right" />
-          </div>
-        </div>
-        
-        {/* 手臂 - 抱臂姿势 */}
-        <div className="arms" onClick={(e) => { e.stopPropagation(); onInteract('arm') }}>
-          <div className="arm left-arm" />
-          <div className="arm right-arm" />
-        </div>
-        
-        {/* 脚脚 */}
-        <div className="feet" onClick={(e) => { e.stopPropagation(); onInteract('foot') }}>
-          <div className="foot left-foot" />
-          <div className="foot right-foot" />
-        </div>
-        
-        {/* 尾巴 */}
-        <div className="tail" />
-      </div>
+    <div 
+      className="garfield-wrapper"
+      onClick={() => onInteract('body')}
+      style={{
+        transform: isAnimating ? 'scale(1.05)' : 'scale(1)',
+        transition: 'transform 0.3s ease',
+      }}
+    >
+      <img 
+        src={getImageUrl()} 
+        alt="Garfield"
+        style={{
+          width: '140px',
+          height: '180px',
+          objectFit: 'contain',
+          filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))',
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}
+        draggable={false}
+      />
       
-      <style>{`
-        .garfield-container {
-          width: 140px;
-          height: 160px;
-          position: relative;
-          cursor: pointer;
-          transform-style: preserve-3d;
-          perspective: 500px;
-        }
-        
-        .garfield-body {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          transform-style: preserve-3d;
-        }
-        
-        .bounce {
-          animation: garfieldBounce 0.5s ease;
-        }
-        
-        @keyframes garfieldBounce {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          25% { transform: translateY(-15px) rotate(-3deg); }
-          50% { transform: translateY(-5px) rotate(3deg); }
-          75% { transform: translateY(-10px) rotate(-1deg); }
-        }
-        
-        /* 身体 */
-        .body-main {
-          position: absolute;
-          bottom: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 100px;
-          height: 80px;
-          background: linear-gradient(180deg, #FF8C42 0%, #E67332 100%);
-          border-radius: 50px 50px 40px 40px;
-          box-shadow: 
-            inset -5px -5px 15px rgba(0,0,0,0.2),
-            0 10px 30px rgba(230, 115, 50, 0.4);
-        }
-        
-        .belly {
-          position: absolute;
-          bottom: 10px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 60px;
-          height: 45px;
-          background: linear-gradient(180deg, #FFE4C4 0%, #FFDAB3 100%);
-          border-radius: 50%;
-        }
-        
-        /* 头 */
-        .garfield-head {
-          position: absolute;
-          top: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 110px;
-          height: 90px;
-          cursor: pointer;
-        }
-        
-        .ear {
-          position: absolute;
-          top: -10px;
-          width: 30px;
-          height: 35px;
-          background: linear-gradient(180deg, #FF8C42 0%, #E67332 100%);
-          border-radius: 50% 50% 20% 20%;
-        }
-        
-        .left-ear { left: 5px; transform: rotate(-20deg); }
-        .right-ear { right: 5px; transform: rotate(20deg); }
-        
-        .ear::after {
-          content: '';
-          position: absolute;
-          top: 8px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 18px;
-          height: 20px;
-          background: #FFB6C1;
-          border-radius: 50%;
-        }
-        
-        /* 脸 */
-        .face {
-          position: relative;
-          width: 100%;
-          height: 75px;
-          background: linear-gradient(180deg, #FFA550 0%, #FF8C42 100%);
-          border-radius: 55px 55px 45px 45px;
-          box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-        }
-        
-        /* 眼睛 */
-        .eyes {
-          position: absolute;
-          top: 20px;
-          display: flex;
-          justify-content: center;
-          gap: 25px;
-        }
-        
-        .eye {
-          width: 22px;
-          height: 22px;
-          background: white;
-          border-radius: 50%;
-          position: relative;
-          overflow: hidden;
-        }
-        
-        .pupil {
-          position: absolute;
-          width: 12px;
-          height: 14px;
-          background: #2D2D2D;
-          border-radius: 50%;
-          top: 4px;
-          left: 5px;
-        }
-        
-        .pupil::after {
-          content: '';
-          position: absolute;
-          width: 5px;
-          height: 5px;
-          background: white;
-          border-radius: 50%;
-          top: 2px;
-          left: 2px;
-        }
-        
-        /* 眼睛状态 */
-        .eyes.happy .eye {
-          height: 8px;
-          border-radius: 8px 8px 50% 50%;
-        }
-        
-        .eyes.sleepy .eye {
-          height: 4px;
-          border-radius: 4px;
-        }
-        
-        .eyes.bored .eye {
-          height: 10px;
-          transform: rotate(-10deg);
-        }
-        
-        .eyes.angry .eye {
-          transform: rotate(15deg);
-        }
-        
-        /* 鼻子 */
-        .nose {
-          position: absolute;
-          top: 45px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 14px;
-          height: 10px;
-          background: #FF6B6B;
-          border-radius: 50%;
-        }
-        
-        /* 嘴巴 */
-        .mouth {
-          position: absolute;
-          top: 52px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 30px;
-          height: 15px;
-        }
-        
-        .mouth-left, .mouth-right {
-          position: absolute;
-          width: 12px;
-          height: 8px;
-          border: 2px solid #8B4513;
-          border-top: none;
-          border-radius: 0 0 12px 12px;
-          top: 5px;
-        }
-        
-        .mouth-left { left: 0; }
-        .mouth-right { right: 0; }
-        
-        .mouth-center {
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 4px;
-          height: 8px;
-          background: #8B4513;
-          border-radius: 2px;
-        }
-        
-        .mouth.smile .mouth-left,
-        .mouth.smile .mouth-right {
-          height: 12px;
-        }
-        
-        .mouth.angry .mouth-left,
-        .mouth.angry .mouth-right {
-          border-color: #8B4513;
-          border-radius: 12px 12px 0 0;
-          border-bottom: none;
-          top: 0;
-        }
-        
-        /* 眉毛 */
-        .brows {
-          position: absolute;
-          top: 12px;
-          width: 100%;
-        }
-        
-        .brow {
-          position: absolute;
-          width: 18px;
-          height: 3px;
-          background: #8B4513;
-          border-radius: 2px;
-        }
-        
-        .left-brow { left: 20px; }
-        .right-brow { right: 20px; }
-        
-        .brows.angry .left-brow { transform: rotate(20deg); top: 15px; }
-        .brows.angry .right-brow { transform: rotate(-20deg); top: 15px; }
-        .brows.raised .left-brow { transform: translateY(-3px); }
-        .brows.raised .right-brow { transform: translateY(-3px); }
-        
-        /* 腮红 */
-        .blush {
-          position: absolute;
-          top: 50px;
-          width: 18px;
-          height: 10px;
-          background: rgba(255, 182, 193, 0.6);
-          border-radius: 50%;
-        }
-        
-        .left-blush { left: 8px; }
-        .right-blush { right: 8px; }
-        
-        /* 胡须 */
-        .whiskers {
-          position: absolute;
-          top: 55px;
-          width: 100%;
-        }
-        
-        .whisker {
-          position: absolute;
-          height: 2px;
-          background: #8B4513;
-          border-radius: 2px;
-        }
-        
-        .whisker.left {
-          left: -15px;
-          width: 35px;
-          top: 0;
-        }
-        
-        .whisker.right {
-          right: -15px;
-          width: 35px;
-          top: 0;
-        }
-        
-        /* 手臂 - 抱臂姿势 */
-        .arms {
-          position: absolute;
-          top: 60px;
-          width: 100%;
-          z-index: 10;
-        }
-        
-        .arm {
-          position: absolute;
-          width: 25px;
-          height: 40px;
-          background: linear-gradient(180deg, #FF8C42 0%, #E67332 100%);
-          border-radius: 20px;
-        }
-        
-        .left-arm {
-          left: -5px;
-          transform: rotate(25deg);
-          top: 10px;
-        }
-        
-        .right-arm {
-          right: -5px;
-          transform: rotate(-25deg);
-          top: 10px;
-        }
-        
-        /* 脚 */
-        .feet {
-          position: absolute;
-          bottom: 5px;
-          width: 100%;
-          display: flex;
-          justify-content: space-around;
-          padding: 0 15px;
-        }
-        
-        .foot {
-          width: 28px;
-          height: 20px;
-          background: linear-gradient(180deg, #FF8C42 0%, #E67332 100%);
-          border-radius: 15px 15px 8px 8px;
-        }
-        
-        /* 尾巴 */
-        .tail {
-          position: absolute;
-          bottom: 40px;
-          right: -10px;
-          width: 40px;
-          height: 15px;
-          background: linear-gradient(90deg, #FF8C42 0%, #E67332 100%);
-          border-radius: 10px;
-          transform: rotate(-20deg);
-          z-index: -1;
-        }
-      `}</style>
+      {/* 可点击区域覆盖 */}
+      <div 
+        className="click-zone head"
+        onClick={(e) => { e.stopPropagation(); onInteract('head') }}
+        style={{
+          position: 'absolute',
+          top: '0%',
+          left: '20%',
+          width: '60%',
+          height: '35%',
+          cursor: 'pointer',
+        }}
+      />
+      <div 
+        className="click-zone arm-left"
+        onClick={(e) => { e.stopPropagation(); onInteract('arm') }}
+        style={{
+          position: 'absolute',
+          top: '40%',
+          left: '5%',
+          width: '25%',
+          height: '25%',
+          cursor: 'pointer',
+        }}
+      />
+      <div 
+        className="click-zone arm-right"
+        onClick={(e) => { e.stopPropagation(); onInteract('arm') }}
+        style={{
+          position: 'absolute',
+          top: '40%',
+          right: '5%',
+          width: '25%',
+          height: '25%',
+          cursor: 'pointer',
+        }}
+      />
+      <div 
+        className="click-zone foot"
+        onClick={(e) => { e.stopPropagation(); onInteract('foot') }}
+        style={{
+          position: 'absolute',
+          bottom: '0%',
+          left: '25%',
+          width: '50%',
+          height: '15%',
+          cursor: 'pointer',
+        }}
+      />
     </div>
   )
 }
@@ -471,7 +194,6 @@ export default function SpiritAvatar() {
   const [showPulse, setShowPulse] = useState(false)
   const [showChatInput, setShowChatInput] = useState(false)
   const [chatText, setChatText] = useState('')
-  const [clickedPart, setClickedPart] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   
   // 定时更新情感
@@ -492,41 +214,35 @@ export default function SpiritAvatar() {
   
   // 处理不同部位的点击
   const handlePartInteract = (part: 'head' | 'body' | 'arm' | 'foot') => {
-    setClickedPart(part)
     setIsInteracting(true)
     
-    // 不同部位不同反馈
-    let action: 'pet' | 'feed' | 'tap' = 'tap'
     let responseText = ''
     
     switch (part) {
       case 'head':
         responseText = '喵~ 摸头好舒服！'
-        action = 'pet'
+        interact('pet')
         break
       case 'body':
         responseText = '嘿嘿，痒痒~'
-        action = 'tap'
+        interact('tap')
         break
       case 'arm':
         responseText = '这是我的手臂！厉害吧！'
-        action = 'feed'
+        interact('feed')
         break
       case 'foot':
         responseText = '别挠我脚脚！哈哈！'
-        action = 'pet'
+        interact('pet')
         break
+      default:
+        interact('tap')
     }
     
-    interact(action)
     setMessage(responseText)
-    
     if (enabled) speak(responseText)
     
-    setTimeout(() => {
-      setIsInteracting(false)
-      setClickedPart(null)
-    }, 500)
+    setTimeout(() => setIsInteracting(false), 500)
   }
   
   // 处理对话
@@ -593,8 +309,8 @@ export default function SpiritAvatar() {
       <div className={`glass rounded-[20px] p-4 flex flex-col items-center relative ${showPulse ? 'pulse-glow' : ''}`}>
         <div className="drag-handle" />
         
-        {/* 3D 加菲猫 */}
-        <Garfield 
+        {/* 3D 加菲猫图片 */}
+        <GarfieldImage 
           emotion={emotion}
           isInteracting={isInteracting}
           isSpeaking={isSpeaking}
@@ -629,9 +345,7 @@ export default function SpiritAvatar() {
             title="抚摸"
             whileHover={{ scale: 1.12 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => {
-              handlePartInteract('head')
-            }}
+            onClick={() => handlePartInteract('head')}
           >
             🤚
           </motion.button>
