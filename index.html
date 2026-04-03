@@ -1,211 +1,511 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>桌面精灵 - 加菲猫</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      background: transparent; 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    html, body, #root {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
     }
-    .container {
-      width: 220px;
-      padding: 15px;
-      background: rgba(255,255,255,0.85);
-      border-radius: 20px;
+    
+    /* 玻璃拟态容器 */
+    .glass {
+      background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(20px);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-      text-align: center;
-      position: relative;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
+    
+    /* 加载 */
+    .loading { display: flex; align-items: center; justify-content: center; height: 100vh; color: #666; }
+    
+    /* 主容器 */
+    .app-container {
+      width: 100%;
+      height: 100%;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+    }
+    
+    /* 拖拽手柄 */
     .drag-handle {
-      width: 36px;
+      width: 40px;
       height: 4px;
-      background: rgba(0,0,0,0.15);
+      background: rgba(0, 0, 0, 0.2);
       border-radius: 2px;
-      margin: 0 auto 10px;
+      margin: 0 auto 5px;
       cursor: grab;
-      -webkit-app-region: drag;
     }
-    .garfield {
+    
+    /* 功能按钮栏 */
+    .toolbar {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .tool-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      color: white;
+      font-size: 12px;
       cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .tool-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
+    .tool-btn.active { background: linear-gradient(135deg, #4f46e5, #6366f1); }
+    
+    /* 功能面板 */
+    .panel {
+      display: none;
+      padding: 12px;
+    }
+    
+    .panel.active { display: block; }
+    
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    /* 天气卡片 */
+    .weather-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 12px;
+      color: white;
+    }
+    
+    .weather-icon { font-size: 32px; }
+    .weather-info h3 { font-size: 18px; margin-bottom: 2px; }
+    .weather-info p { font-size: 12px; opacity: 0.9; }
+    
+    .weather-input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-top: 8px;
+      font-size: 13px;
+    }
+    
+    /* 新闻列表 */
+    .news-list { display: flex; flex-direction: column; gap: 8px; }
+    .news-item {
+      padding: 10px;
+      background: #f9fafb;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .news-item:hover { background: #f3f4f6; }
+    .news-title { font-size: 13px; font-weight: 500; color: #333; margin-bottom: 4px; }
+    .news-meta { font-size: 11px; color: #9ca3af; }
+    
+    /* 日程/备忘录 */
+    .todo-input {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .todo-input input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    
+    .todo-input button {
+      padding: 8px 16px;
+      background: #6366f1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    
+    .todo-list { display: flex; flex-direction: column; gap: 6px; }
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: #f9fafb;
+      border-radius: 8px;
+    }
+    
+    .todo-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .todo-item.completed .todo-text {
+      text-decoration: line-through;
+      color: #9ca3af;
+    }
+    
+    .todo-text { flex: 1; font-size: 13px; }
+    .todo-delete { color: #ef4444; cursor: pointer; font-size: 12px; }
+    
+    /* 文件搜索 */
+    .search-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    
+    .file-result {
+      padding: 8px;
+      background: #f9fafb;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+    .file-result:hover { background: #f3f4f6; }
+    .file-name { font-weight: 500; color: #333; }
+    .file-path { color: #9ca3af; font-size: 11px; }
+    
+    /* 加菲猫 */
+    .garfield-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .garfield-img {
+      width: 100px;
+      height: 120px;
+      object-fit: contain;
       transition: transform 0.2s;
     }
-    .garfield:hover { transform: scale(1.03); }
-    .garfield:active { transform: scale(0.98); }
-    .message {
+    
+    .garfield-img:hover { transform: scale(1.1); }
+    .garfield-img.bounce { animation: bounce 0.5s; }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+    
+    /* 消息气泡 */
+    .mood-bubble {
       background: white;
-      padding: 8px 14px;
       border-radius: 12px;
-      margin-top: 12px;
-      font-size: 13px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      display: inline-block;
-      min-width: 120px;
+      padding: 8px 14px;
+      font-size: 12px;
+      color: #374151;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      max-width: 160px;
+      text-align: center;
     }
-    .mood {
+    
+    /* 操作按钮 */
+    .action-buttons {
       display: flex;
+      gap: 8px;
       justify-content: center;
-      gap: 4px;
-      margin-top: 10px;
+      margin-top: 8px;
     }
-    .mood-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #e5e7eb;
-    }
-    .mood-dot.active { 
-      background: #6366f1;
-      box-shadow: 0 0 6px rgba(99,102,241,0.5);
-    }
-    .buttons {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 12px;
-    }
-    .btn {
-      width: 38px;
-      height: 38px;
+    
+    .action-btn {
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       border: none;
       background: linear-gradient(135deg, #6366f1, #818cf8);
       color: white;
       cursor: pointer;
-      font-size: 16px;
-      box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+      font-size: 14px;
       transition: all 0.2s;
     }
-    .btn:hover { transform: scale(1.1); }
-    .title {
-      font-size: 14px;
-      color: #666;
-      margin-bottom: 5px;
-    }
+    
+    .action-btn:hover { transform: scale(1.1); }
+    
+    /* 心情进度条 */
+    .mood-bar { display: flex; gap: 4px; justify-content: center; margin-top: 8px; }
+    .mood-dot { width: 8px; height: 8px; border-radius: 50%; background: #e5e7eb; }
+    .mood-dot.active { background: linear-gradient(135deg, #6366f1, #818cf8); }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="title">🧚 加菲猫</div>
-    <div class="drag-handle"></div>
-    
-    <div class="garfield" onclick="interact('body')">
-      <svg viewBox="0 0 200 220" width="150" height="160" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">
-        <defs>
-          <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#FF9A5C"/>
-            <stop offset="50%" stop-color="#FF8C42"/>
-            <stop offset="100%" stop-color="#E67332"/>
-          </linearGradient>
-          <linearGradient id="bellyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#FFE8D0"/>
-            <stop offset="100%" stop-color="#FFD4B8"/>
-          </linearGradient>
-          <filter id="shadow">
-            <feDropShadow dx="0" dy="4" stdDeviation="3" flood-opacity="0.25"/>
-          </filter>
-        </defs>
-        
-        <ellipse cx="100" cy="170" rx="55" ry="42" fill="url(#bodyGrad)" filter="url(#shadow)"/>
-        <ellipse cx="100" cy="175" rx="38" ry="28" fill="url(#bellyGrad)"/>
-        <ellipse cx="70" cy="165" rx="8" ry="12" fill="#222" opacity="0.6"/>
-        <ellipse cx="130" cy="175" rx="6" ry="10" fill="#222" opacity="0.5"/>
-        
-        <ellipse cx="100" cy="70" rx="52" ry="45" fill="url(#bodyGrad)" filter="url(#shadow)"/>
-        <path d="M85 40 Q100 35 115 40" stroke="#222" stroke-width="3" fill="none" opacity="0.5"/>
-        
-        <ellipse cx="55" cy="32" rx="16" ry="20" fill="#FF8C42"/>
-        <ellipse cx="55" cy="35" rx="9" ry="11" fill="#222"/>
-        <ellipse cx="145" cy="32" rx="16" ry="20" fill="#FF8C42"/>
-        <ellipse cx="145" cy="35" rx="9" ry="11" fill="#222"/>
-        
-        <ellipse cx="78" cy="58" rx="12" ry="6" fill="#FFD700"/>
-        <ellipse cx="122" cy="58" rx="12" ry="6" fill="#FFD700"/>
-        <ellipse cx="78" cy="59" rx="7" ry="4" fill="#111"/>
-        <ellipse cx="122" cy="59" rx="7" ry="4" fill="#111"/>
-        <path d="M66 55 Q78 52 90 55" stroke="#222" stroke-width="1.5" fill="none"/>
-        <path d="M110 55 Q122 52 134 55" stroke="#222" stroke-width="1.5" fill="none"/>
-        
-        <ellipse cx="100" cy="72" rx="7" ry="5" fill="#FF6B6B"/>
-        <path d="M92 80 Q100 85 108 80" stroke="#222" stroke-width="1.5" fill="none"/>
-        
-        <ellipse cx="55" cy="72" rx="10" ry="6" fill="#FFB6C1" opacity="0.4"/>
-        <ellipse cx="145" cy="72" rx="10" ry="6" fill="#FFB6C1" opacity="0.4"/>
-        
-        <line x1="42" y1="70" x2="15" y2="65" stroke="#111" stroke-width="1.5"/>
-        <line x1="42" y1="75" x2="15" y2="78" stroke="#111" stroke-width="1.5"/>
-        <line x1="158" y1="70" x2="185" y2="65" stroke="#111" stroke-width="1.5"/>
-        <line x1="158" y1="75" x2="185" y2="78" stroke="#111" stroke-width="1.5"/>
-        
-        <ellipse cx="38" cy="115" rx="14" ry="28" fill="#FF8C42" transform="rotate(25 38 115)"/>
-        <ellipse cx="38" cy="115" rx="8" ry="18" fill="#222" transform="rotate(25 38 115)" opacity="0.4"/>
-        <ellipse cx="162" cy="115" rx="14" ry="28" fill="#FF8C42" transform="rotate(-25 162 115)"/>
-        <ellipse cx="162" cy="115" rx="8" ry="18" fill="#222" transform="rotate(-25 162 115)" opacity="0.4"/>
-        
-        <ellipse cx="70" cy="205" rx="15" ry="10" fill="#FF8C42"/>
-        <ellipse cx="70" cy="205" rx="8" ry="5" fill="#222" opacity="0.3"/>
-        <ellipse cx="130" cy="205" rx="15" ry="10" fill="#FF8C42"/>
-        <ellipse cx="130" cy="205" rx="8" ry="5" fill="#222" opacity="0.3"/>
-        
-        <path d="M150 175 Q175 165 172 145" stroke="#FF8C42" stroke-width="12" fill="none" stroke-linecap="round"/>
-        <path d="M155 165 Q170 158 168 145" stroke="#222" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.7"/>
-      </svg>
-    </div>
-    
-    <div class="message" id="msg">你好！我是加菲猫~ 🐱</div>
-    
-    <div class="mood">
-      <div class="mood-dot active"></div>
-      <div class="mood-dot active"></div>
-      <div class="mood-dot active"></div>
-      <div class="mood-dot"></div>
-      <div class="mood-dot"></div>
-    </div>
-    
-    <div class="buttons">
-      <button class="btn" onclick="interact('head')" title="摸头">🤚</button>
-      <button class="btn" onclick="feed()" title="喂食">🍪</button>
-      <button class="btn" onclick="play()" title="玩耍">🧶</button>
-    </div>
+  <div id="root">
+    <div class="loading">加载中...</div>
   </div>
 
   <script>
-    const messages = {
-      head: '喵~ 摸头好舒服！',
-      body: '嘿嘿，痒痒~',
-      arm: '这是我的手臂！厉害吧！',
-      foot: '别挠我脚脚！哈哈！',
-      feed: '好吃！谢谢你！',
-      play: '来玩吧！喵~'
+    // ============ 应用状态 ============
+    const state = {
+      emotion: 'calm',
+      moodValue: 50,
+      message: '你好呀！我是加菲猫！',
+      currentPanel: null,
+      todos: [],
+      news: [],
+      weather: null,
+      city: '北京',
+      searchResults: []
     };
-    
-    let mood = 3;
-    
-    function interact(part) {
-      document.getElementById('msg').textContent = messages[part] || '你好~';
-      updateMood();
+
+    // ============ 天气服务 ============
+    async function fetchWeather(city) {
+      try {
+        const res = await fetch(`https://wttr.in/${city}?format=j1`);
+        const data = await res.json();
+        const current = data.current_condition[0];
+        state.weather = {
+          temp: current.temp_C,
+          condition: current.weatherDesc[0].value,
+          humidity: current.humidity
+        };
+        render();
+      } catch (e) {
+        console.error('天气获取失败:', e);
+      }
     }
-    
-    function feed() {
-      document.getElementById('msg').textContent = '好吃！谢谢你！🍪';
-      mood = Math.min(5, mood + 1);
-      updateMood();
+
+    // ============ 新闻服务 ============
+    async function fetchNews() {
+      // 备用新闻数据
+      state.news = [
+        { title: '科技创新推动高质量发展', source: '人民日报', url: 'http://www.people.com.cn' },
+        { title: '人工智能改变未来生活', source: '新华社', url: 'http://www.xinhuanet.com' },
+        { title: '全球气候变化应对措施', source: 'BBC', url: 'https://www.bbc.com' }
+      ];
+      render();
     }
-    
-    function play() {
-      document.getElementById('msg').textContent = '来玩吧！喵~ 🧶';
-      mood = Math.min(5, mood + 1);
-      updateMood();
+
+    // ============ 情感系统 ============
+    function updateEmotion(action) {
+      const messages = {
+        pet: ['喵~ 摸头好舒服！', '嘿嘿，最喜欢了！', '继续继续~'],
+        feed: ['好吃！谢谢你！', '真美味！', '再来一个！'],
+        tap: ['哎呀！', '干嘛呀~', '吓一跳！']
+      };
+      
+      const list = messages[action] || messages.tap;
+      state.message = list[Math.floor(Math.random() * list.length)];
+      
+      if (action === 'pet') state.moodValue = Math.min(100, state.moodValue + 15);
+      if (action === 'feed') state.moodValue = Math.min(100, state.moodValue + 20);
+      if (action === 'tap') state.moodValue = Math.min(100, state.moodValue + 5);
+      
+      // 弹跳动画
+      const img = document.querySelector('.garfield-img');
+      if (img) {
+        img.classList.add('bounce');
+        setTimeout(() => img.classList.remove('bounce'), 500);
+      }
+      
+      render();
     }
-    
-    function updateMood() {
-      const dots = document.querySelectorAll('.mood-dot');
-      dots.forEach((dot, i) => {
-        dot.classList.toggle('active', i < mood);
-      });
+
+    // ============ 待办事项 ============
+    function addTodo(text) {
+      if (!text.trim()) return;
+      state.todos.push({ id: Date.now(), text, done: false });
+      render();
     }
+
+    function toggleTodo(id) {
+      const todo = state.todos.find(t => t.id === id);
+      if (todo) todo.done = !todo.done;
+      render();
+    }
+
+    function deleteTodo(id) {
+      state.todos = state.todos.filter(t => t.id !== id);
+      render();
+    }
+
+    // ============ 文件搜索 ============
+    function searchFiles(query) {
+      if (!query.trim()) {
+        state.searchResults = [];
+        render();
+        return;
+      }
+      
+      // 由于浏览器安全限制，无法直接访问文件系统
+      // 这里模拟搜索结果
+      state.searchResults = [
+        { name: `${query}.txt`, path: 'C:\\Users\\Documents\\' },
+        { name: `${query}.docx`, path: 'C:\\Users\\Desktop\\' },
+        { name: `${query}.pdf`, path: 'C:\\Users\\Downloads\\' }
+      ];
+      render();
+    }
+
+    // ============ 面板切换 ============
+    function showPanel(panel) {
+      state.currentPanel = state.currentPanel === panel ? null : panel;
+      render();
+    }
+
+    // ============ 渲染 ============
+    function render() {
+      const root = document.getElementById('root');
+      const moodDots = Math.ceil(state.moodValue / 20);
+      
+      // 加菲猫 SVG
+      const garfieldSVG = `
+        <svg viewBox="0 0 200 220" width="100" height="120">
+          <ellipse cx="100" cy="170" rx="55" ry="40" fill="#FF8C42"/>
+          <ellipse cx="100" cy="175" rx="35" ry="25" fill="#FFE8D0"/>
+          <ellipse cx="100" cy="70" rx="60" ry="50" fill="#FF8C42"/>
+          <ellipse cx="55" cy="35" rx="18" ry="22" fill="#FF8C42"/>
+          <ellipse cx="55" cy="38" rx="10" ry="12" fill="#FFB6C1"/>
+          <ellipse cx="145" cy="35" rx="18" ry="22" fill="#FF8C42"/>
+          <ellipse cx="145" cy="38" rx="10" ry="12" fill="#FFB6C1"/>
+          <ellipse cx="80" cy="60" rx="12" ry="14" fill="white"/>
+          <ellipse cx="120" cy="60" rx="12" ry="14" fill="white"/>
+          <ellipse cx="82" cy="62" rx="7" ry="9" fill="#2D2D2D"/>
+          <ellipse cx="122" cy="62" rx="7" ry="9" fill="#2D2D2D"/>
+          <ellipse cx="100" cy="78" rx="8" ry="5" fill="#FF6B6B"/>
+          <path d="M92 85 Q100 92 108 85" stroke="#8B4513" stroke-width="2" fill="none"/>
+          <ellipse cx="60" cy="75" rx="10" ry="6" fill="#FFB6C1" opacity="0.5"/>
+          <ellipse cx="140" cy="75" rx="10" ry="6" fill="#FFB6C1" opacity="0.5"/>
+          <ellipse cx="40" cy="120" rx="15" ry="30" fill="#FF8C42" transform="rotate(30 40 120)"/>
+          <ellipse cx="160" cy="120" rx="15" ry="30" fill="#FF8C42" transform="rotate(-30 160 120)"/>
+          <ellipse cx="70" cy="205" rx="15" ry="10" fill="#FF8C42"/>
+          <ellipse cx="130" cy="205" rx="15" ry="10" fill="#FF8C42"/>
+          <path d="M150 180 Q180 170 175 150" stroke="#FF8C42" stroke-width="12" fill="none" stroke-linecap="round"/>
+        </svg>
+      `;
+
+      root.innerHTML = `
+        <div class="app-container glass">
+          <div class="drag-handle"></div>
+          
+          <!-- 功能工具栏 -->
+          <div class="toolbar">
+            <button class="tool-btn ${state.currentPanel === 'weather' ? 'active' : ''}" onclick="showPanel('weather')">
+              🌤️ 天气
+            </button>
+            <button class="tool-btn ${state.currentPanel === 'news' ? 'active' : ''}" onclick="showPanel('news')">
+              📰 新闻
+            </button>
+            <button class="tool-btn ${state.currentPanel === 'todo' ? 'active' : ''}" onclick="showPanel('todo')">
+              📝 日程
+            </button>
+            <button class="tool-btn ${state.currentPanel === 'search' ? 'active' : ''}" onclick="showPanel('search')">
+              🔍 搜索
+            </button>
+          </div>
+          
+          <!-- 功能面板 -->
+          <div class="panel ${state.currentPanel === 'weather' ? 'active' : ''}" id="panel-weather">
+            <div class="panel-title">🌤️ 天气查询</div>
+            <div class="weather-card">
+              <div class="weather-icon">${state.weather ? '☀️' : '⏳'}</div>
+              <div class="weather-info">
+                ${state.weather ? `
+                  <h3>${state.city} ${state.weather.temp}°C</h3>
+                  <p>${state.weather.condition}</p>
+                ` : '<h3>加载中...</h3>'}
+              </div>
+            </div>
+            <input class="weather-input" placeholder="输入城市名称" value="${state.city}" 
+              onchange="state.city=this.value; fetchWeather(this.value)">
+          </div>
+          
+          <div class="panel ${state.currentPanel === 'news' ? 'active' : ''}" id="panel-news">
+            <div class="panel-title">📰 今日资讯</div>
+            <div class="news-list">
+              ${state.news.length ? state.news.map(n => `
+                <div class="news-item" onclick="window.open('${n.url}')">
+                  <div class="news-title">${n.title}</div>
+                  <div class="news-meta">📰 ${n.source}</div>
+                </div>
+              `).join('') : '<div style="color:#9ca3af;text-align:center;padding:20px;">加载中...</div>'}
+            </div>
+          </div>
+          
+          <div class="panel ${state.currentPanel === 'todo' ? 'active' : ''}" id="panel-todo">
+            <div class="panel-title">📝 日程/备忘录</div>
+            <div class="todo-input">
+              <input placeholder="添加事项..." onkeydown="if(event.key==='Enter')addTodo(this.value)">
+              <button onclick="addTodo(this.previousElementSibling.value)">添加</button>
+            </div>
+            <div class="todo-list">
+              ${state.todos.length ? state.todos.map(t => `
+                <div class="todo-item ${t.done ? 'completed' : ''}">
+                  <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${t.id})">
+                  <span class="todo-text">${t.text}</span>
+                  <span class="todo-delete" onclick="deleteTodo(${t.id})">删除</span>
+                </div>
+              `).join('') : '<div style="color:#9ca3af;text-align:center;padding:10px;">暂无事项</div>'}
+            </div>
+          </div>
+          
+          <div class="panel ${state.currentPanel === 'search' ? 'active' : ''}" id="panel-search">
+            <div class="panel-title">🔍 文件搜索</div>
+            <input class="search-input" placeholder="输入文件名搜索..." 
+              oninput="searchFiles(this.value)">
+            <div class="todo-list">
+              ${state.searchResults.length ? state.searchResults.map(f => `
+                <div class="file-result">
+                  <div class="file-name">📄 ${f.name}</div>
+                  <div class="file-path">${f.path}</div>
+                </div>
+              `).join('') : '<div style="color:#9ca3af;text-align:center;padding:10px;">输入文件名搜索</div>'}
+            </div>
+          </div>
+          
+          <!-- 加菲猫 -->
+          <div class="garfield-container">
+            <div class="garfield-img" onclick="updateEmotion('tap')">
+              ${garfieldSVG}
+            </div>
+            <div class="mood-bubble">${state.message}</div>
+            <div class="mood-bar">
+              ${[1,2,3,4,5].map(i => `<div class="mood-dot ${i <= moodDots ? 'active' : ''}"></div>`).join('')}
+            </div>
+            <div class="action-buttons">
+              <button class="action-btn" onclick="updateEmotion('pet')" title="抚摸">🤚</button>
+              <button class="action-btn" onclick="updateEmotion('feed')" title="投喂">🍪</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ============ 初始化 ============
+    fetchWeather(state.city);
+    fetchNews();
+    render();
+    
+    console.log('🐱 桌面精灵已启动');
   </script>
 </body>
 </html>
